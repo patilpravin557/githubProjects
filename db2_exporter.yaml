@@ -1,0 +1,359 @@
+# clean up
+# ------------------------------------------------------------------
+# kc delete -n commerce servicemonitor db2exporter-service-monitor
+# kc delete -n commerce service db2exporter-service
+# kc delete -n commerce pod db2exporter
+# kc delete -n commerce configmap db2exporter-config
+#
+#
+# kc apply -f db2exporter.yaml
+#
+# https://github.com/albertodonato/query-exporter
+# Need to add liveliness and readiness pods
+# kc create -f db2exporter.yaml
+
+# The db2exporter.yaml content that should be used is the following:
+# Change the database server (demoqaauthdb) to the your IP address of your db server.
+
+apiVersion: v1
+data:
+  config.yaml: |-
+    databases:
+      live:
+        dsn: db2+ibm_db://[username:password][@host:port]/database
+    metrics:
+      db2_commerce_fix_pack:
+        type: gauge
+        description: A sample gauge
+        labels: [commerce_fix_pack]
+      db2_orders_status_total:
+        type: gauge
+        description: A sample gauge
+        labels: [order_status]
+      db2_orderitems_total:
+        type: gauge
+        description: A sample gauge
+      db2_appl_status_total:
+        type: gauge
+        description: A sample gauge
+        labels: [appl_status]
+      db2_pool_data_l_reads_total:
+        type: gauge
+        description: A sample gauge
+      db2_pool_index_l_reads_total:
+        type: gauge
+        description: A sample gauge
+      db2_pool_temp_data_l_reads_total:
+        type: gauge
+        description: A sample gauge
+      db2_pool_temp_index_l_reads_total:
+        type: gauge
+        description: A sample gauge
+      db2_pool_data_p_reads_total:
+        type: gauge
+        description: A sample gauge
+      db2_pool_index_p_reads_total:
+        type: gauge
+        description: A sample gauge
+      db2_pool_temp_data_p_reads_total:
+        type: gauge
+        description: A sample gauge
+      db2_pool_temp_index_p_reads_total:
+        type: gauge
+        description: A sample gauge
+      db2_pool_data_writes_total:
+        type: gauge
+        description: A sample gauge
+      db2_pool_index_writes_total:
+        type: gauge
+        description: A sample gauge
+      db2_pool_read_time_seconds_sum:
+        type: gauge
+        description: A sample gauge
+      db2_pool_write_time_seconds_sum:
+        type: gauge
+        description: A sample gauge
+      db2_client_idle_wait_time_seconds_sum:
+        type: gauge
+        description: A sample gauge
+      db2_deadlocks_total:
+        type: gauge
+        description: A sample gauge
+      db2_direct_reads_total:
+        type: gauge
+        description: A sample gauge
+      db2_direct_read_time_seconds_sum:
+        type: gauge
+        description: A sample gauge
+      db2_direct_writes_total:
+        type: gauge
+        description: A sample gauge
+      db2_direct_write_time_seconds_sum:
+        type: gauge
+        description: A sample gauge
+      db2_direct_read_reqs_total:
+        type: gauge
+        description: A sample gauge
+      db2_direct_write_reqs_total:
+        type: gauge
+        description: A sample gauge
+      db2_lock_escals_total:
+        type: gauge
+        description: A sample gauge
+      db2_lock_timeouts_total:
+        type: gauge
+        description: A sample gauge
+      db2_lock_wait_time_seconds_sum:
+        type: gauge
+        description: A sample gauge
+      db2_lock_waits_total:
+        type: gauge
+        description: A sample gauge
+      db2_log_buffer_wait_time_seconds_sum:
+        type: gauge
+        description: A sample gauge
+      db2_num_log_buffer_full_total:
+        type: gauge
+        description: A sample gauge
+      db2_log_disk_wait_time_seconds_sum:
+        type: gauge
+        description: A sample gauge
+      db2_log_disk_waits_total:
+        type: gauge
+        description: A sample gauge
+      db2_rqsts_completed_total:
+        type: gauge
+        description: A sample gauge
+      db2_rows_modified_total:
+        type: gauge
+        description: A sample gauge
+      db2_rows_read_total:
+        type: gauge
+        description: A sample gauge
+      db2_rows_returned_total:
+        type: gauge
+        description: A sample gauge
+      db2_tcpip_recv_volume_total:
+        type: gauge
+        description: A sample gauge
+      db2_tcpip_send_volume_total:
+        type: gauge
+        description: A sample gauge
+      db2_tcpip_recv_wait_time_seconds_sum:
+        type: gauge
+        description: A sample gauge
+      db2_tcpip_recvs_total:
+        type: gauge
+        description: A sample gauge
+      db2_tcpip_send_wait_time_seconds_sum:
+        type: gauge
+        description: A sample gauge
+      db2_tcpip_sends_total:
+        type: gauge
+        description: A sample gauge
+      db2_total_rqst_time_seconds_sum:
+        type: gauge
+        description: A sample gauge
+      db2_total_cpu_time_seconds_sum:
+        type: gauge
+        description: A sample gauge
+      db2_total_wait_time_seconds_sum:
+        type: gauge
+        description: A sample gauge
+      db2_total_section_sort_time_seconds_sum:
+        type: gauge
+        description: A sample gauge
+      db2_sorts_total:
+        type: gauge
+        description: A sample gauge
+      db2_sort_overflows_total:
+        type: gauge
+        description: A sample gauge
+      db2_total_commit_time_seconds_sum:
+        type: gauge
+        description: A sample gauge
+      db2_app_commits_total:
+        type: gauge
+        description: A sample gauge
+      db2_total_rollback_time_seconds_sum:
+        type: gauge
+        description: A sample gauge
+      db2_app_rollbacks_total:
+        type: gauge
+        description: A sample gauge
+      db2_total_runstats_time_seconds_sum:
+        type: gauge
+        description: A sample gauge
+      db2_runstats_total:
+        type: gauge
+        description: A sample gauge
+      db2_total_reorg_time_seconds_sum:
+        type: gauge
+        description: A sample gauge
+      db2_reorgs_total:
+        type: gauge
+        description: A sample gauge
+      db2_total_load_time_seconds_sum:
+        type: gauge
+        description: A sample gauge
+      db2_loads_total:
+        type: gauge
+        description: A sample gauge
+      db2_pkg_cache_inserts_total:
+        type: gauge
+        description: A sample gauge
+      db2_pkg_cache_lookups_total:
+        type: gauge
+        description: A sample gauge
+    queries:
+       query1:
+        interval: 1h
+        databases: [live]
+        metrics: [db2_commerce_fix_pack]
+        sql: SELECT VERSION || '.' || "RELEASE" || '.' || NVL("MOD",0) || '.' ||  NVL("FIXPACK",0) AS "commerce_fix_pack", 0 "db2_commerce_fix_pack" FROM WCS.SITE WHERE COMPNAME = 'BASE'
+       query2:
+        interval: 30
+        databases: [live]
+        metrics: [db2_orders_status_total]
+        sql: SELECT status AS "order_status",COUNT(*) AS db2_orders_status_total FROM wcs.orders GROUP BY status WITH UR
+       query3:
+        interval: 30
+        databases: [live]
+        metrics: [db2_orderitems_total]
+        sql: SELECT COUNT(*) AS db2_orderitems_total FROM wcs.orderitems WITH UR        
+       query4:
+        interval: null
+        databases: [live]
+        metrics: [db2_appl_status_total]
+        sql: SELECT appl_status as "appl_status", SUM( total ) "db2_appl_status_total"
+             FROM (
+             SELECT
+             DECODE( event_state || event_type || event_object,
+                        'IDLEACQUIRELOCK','LOCK_WAIT',
+                        'EXECUTINGPROCESSLOCK_ESCALATION','LOCK_ESCALATION',
+                        'EXECUTINGPROCESSREQUEST','UOW_EXECUTE',
+                        'IDLEWAITREQUEST','UOW_WAIT',
+                        'EXECUTINGPROCESSROUTINE','UOW_EXECUTE',
+                        'OTHER' ) appl_status,
+              1 total
+             FROM TABLE(MON_GET_AGENT('SYSDEFAULTUSERCLASS', 'SYSDEFAULTSUBCLASS', NULL, -2))
+             WHERE MON_GET_APPLICATION_HANDLE() <> application_handle
+             UNION ALL
+             SELECT 'LOCK_WAIT' appl_status, 0 total FROM sysibm.sysdummy1
+             UNION ALL
+             SELECT 'LOCK_ESCALATION' appl_status, 0 total FROM sysibm.sysdummy1
+             UNION ALL
+             SELECT 'UOW_EXECUTE' appl_status, 0 total FROM sysibm.sysdummy1
+             UNION ALL
+             SELECT 'UOW_WAIT' appl_status, 0 total FROM sysibm.sysdummy1 )
+             GROUP BY appl_status
+       query5:
+        interval: null
+        databases: [live]
+        metrics: [db2_pool_data_l_reads_total,db2_pool_index_l_reads_total,db2_pool_temp_data_l_reads_total,db2_pool_temp_index_l_reads_total,db2_pool_data_p_reads_total,
+                  db2_pool_index_p_reads_total,db2_pool_temp_data_p_reads_total,db2_pool_temp_index_p_reads_total,db2_pool_data_writes_total,db2_pool_index_writes_total,
+                  db2_pool_read_time_seconds_sum,db2_pool_write_time_seconds_sum,db2_client_idle_wait_time_seconds_sum,db2_deadlocks_total,db2_direct_reads_total,
+                  db2_direct_read_time_seconds_sum,db2_direct_writes_total,db2_direct_write_time_seconds_sum,db2_direct_read_reqs_total,db2_direct_write_reqs_total,
+                  db2_lock_escals_total,db2_lock_timeouts_total,db2_lock_wait_time_seconds_sum,db2_lock_waits_total,db2_log_buffer_wait_time_seconds_sum,
+                  db2_num_log_buffer_full_total,db2_log_disk_wait_time_seconds_sum,db2_log_disk_waits_total,
+                  db2_rqsts_completed_total,db2_rows_modified_total,db2_rows_read_total,db2_rows_returned_total,db2_tcpip_recv_volume_total,db2_tcpip_send_volume_total,
+                  db2_tcpip_recv_wait_time_seconds_sum,db2_tcpip_recvs_total,db2_tcpip_send_wait_time_seconds_sum,db2_tcpip_sends_total,
+                  db2_total_rqst_time_seconds_sum,db2_total_cpu_time_seconds_sum,db2_total_wait_time_seconds_sum,db2_total_section_sort_time_seconds_sum,
+                  db2_sorts_total,db2_sort_overflows_total,db2_total_commit_time_seconds_sum,db2_app_commits_total,
+                  db2_total_rollback_time_seconds_sum,db2_app_rollbacks_total,db2_total_runstats_time_seconds_sum,db2_runstats_total,
+                  db2_total_reorg_time_seconds_sum,db2_reorgs_total,db2_total_load_time_seconds_sum,db2_loads_total,db2_pkg_cache_inserts_total,
+                  db2_pkg_cache_lookups_total]
+        sql: SELECT SUM(pool_data_l_reads) AS "db2_pool_data_l_reads_total",SUM(pool_index_l_reads) AS "db2_pool_index_l_reads_total",
+             SUM(pool_temp_data_l_reads) AS "db2_pool_temp_data_l_reads_total",SUM(pool_temp_index_l_reads) AS "db2_pool_temp_index_l_reads_total",
+             SUM(pool_data_p_reads) AS "db2_pool_data_p_reads_total", SUM(pool_index_p_reads) AS "db2_pool_index_p_reads_total",
+             SUM(pool_temp_data_p_reads) AS "db2_pool_temp_data_p_reads_total", SUM(pool_temp_index_p_reads) AS "db2_pool_temp_index_p_reads_total",
+             SUM(pool_data_writes) AS "db2_pool_data_writes_total", SUM(pool_index_writes) AS "db2_pool_index_writes_total",
+             (CAST(SUM(pool_read_time)AS DECIMAL (31,4))/1000) AS "db2_pool_read_time_seconds_sum",
+             (CAST(SUM(pool_write_time)AS DECIMAL (31,4))/1000) AS "db2_pool_write_time_seconds_sum",
+             (CAST(SUM(client_idle_wait_time)AS DECIMAL (31,4))/1000) AS "db2_client_idle_wait_time_seconds_sum", SUM(deadlocks) AS "db2_deadlocks_total",
+             SUM(direct_reads) AS "db2_direct_reads_total",(CAST(SUM(direct_read_time)AS DECIMAL (31,4))/1000) AS "db2_direct_read_time_seconds_sum",
+             SUM(direct_writes) AS "db2_direct_writes_total", (CAST(SUM(direct_write_time)AS DECIMAL (31,4))/1000) AS "db2_direct_write_time_seconds_sum",
+             SUM(direct_read_reqs) AS "db2_direct_read_reqs_total", SUM(direct_write_reqs) AS "db2_direct_write_reqs_total",
+             SUM(lock_escals) AS "db2_lock_escals_total", (CAST(SUM(lock_timeouts) AS DECIMAL (31,4))/1000) AS "db2_lock_timeouts_total",
+             (CAST(SUM(lock_wait_time)AS DECIMAL (31,4))/1000) AS "db2_lock_wait_time_seconds_sum",
+             SUM(lock_waits) AS "db2_lock_waits_total", (CAST(SUM(log_buffer_wait_time)AS DECIMAL (31,4))/1000) AS "db2_log_buffer_wait_time_seconds_sum",
+             SUM(num_log_buffer_full) AS "db2_num_log_buffer_full_total", (CAST(SUM(log_disk_wait_time)AS DECIMAL (31,4))/1000) AS "db2_log_disk_wait_time_seconds_sum",
+             SUM(log_disk_waits_total) AS "db2_log_disk_waits_total", SUM(rqsts_completed_total) AS "db2_rqsts_completed_total",
+             SUM(rows_modified) AS "db2_rows_modified_total", SUM(rows_read) AS "db2_rows_read_total", SUM(rows_returned) AS "db2_rows_returned_total",
+             SUM(tcpip_recv_volume) AS "db2_tcpip_recv_volume_total", SUM(tcpip_send_volume) AS "db2_tcpip_send_volume_total",
+             (CAST(SUM(tcpip_recv_wait_time)AS DECIMAL (31,4))/1000) AS "db2_tcpip_recv_wait_time_seconds_sum",  SUM(tcpip_recvs_total) AS "db2_tcpip_recvs_total",
+             (CAST(SUM(tcpip_send_wait_time)AS DECIMAL (31,4))/1000) AS "db2_tcpip_send_wait_time_seconds_sum", SUM(tcpip_sends_total) AS "db2_tcpip_sends_total",
+             (CAST(SUM(total_rqst_time)AS DECIMAL (31,4))/1000) AS "db2_total_rqst_time_seconds_sum",
+             SUM(CAST((total_cpu_time/1000/1000) AS BIGINT)) AS "db2_total_cpu_time_seconds_sum",
+             (CAST(SUM(total_wait_time)AS DECIMAL (31,4))/1000) AS "db2_total_wait_time_seconds_sum",
+             (CAST(SUM(total_section_sort_time) AS DECIMAL (31,4))/1000) AS "db2_total_section_sort_time_seconds_sum",
+             SUM(total_sorts) AS "db2_sorts_total", SUM(sort_overflows) AS "db2_sort_overflows_total",
+             (CAST(SUM(total_commit_time) AS DECIMAL (31,4))/1000) AS "db2_total_commit_time_seconds_sum", SUM(total_app_commits) AS "db2_app_commits_total",
+             (CAST(SUM(total_rollback_time)AS DECIMAL (31,4))/1000) AS "db2_total_rollback_time_seconds_sum", SUM(total_app_rollbacks) AS "db2_app_rollbacks_total",
+             (CAST(SUM(total_runstats_time)AS DECIMAL (31,4))/1000) AS "db2_total_runstats_time_seconds_sum", SUM(total_runstats) AS "db2_runstats_total",
+             (CAST(SUM(total_reorg_time)AS DECIMAL (31,4))/1000) AS "db2_total_reorg_time_seconds_sum", SUM(total_reorgs) AS "db2_reorgs_total",
+             (CAST(SUM(total_load_time) AS DECIMAL (31,4))/1000) AS "db2_total_load_time_seconds_sum", SUM(total_loads) AS "db2_loads_total",
+             SUM(pkg_cache_inserts) AS "db2_pkg_cache_inserts_total",SUM(pkg_cache_lookups) AS "db2_pkg_cache_lookups_total"
+             FROM TABLE(mon_get_workload('',-1))
+
+kind: ConfigMap
+metadata:
+  name: db2exporter-config
+  namespace: commerce
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: db2exporter
+  namespace: commerce
+  labels:
+    app: db2exporter
+spec:
+  containers:
+  - name: exporter-container
+    command: ['query-exporter', '/config/config.yaml', '-H', '0.0.0.0']
+    image: adonato/query-exporter:latest
+    imagePullPolicy: Always
+    ports:
+    - containerPort: 9560
+      protocol: TCP
+    volumeMounts:
+    - mountPath: /config/config.yaml
+      name: config-volume
+      subPath: config.yaml
+  volumes:
+    - name: config-volume
+      configMap:
+        name: db2exporter-config
+  restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: db2exporter
+  name: db2exporter-service
+  namespace: commerce
+spec:
+  ports:
+  - name: metrics
+    port: 80
+    protocol: TCP
+    targetPort: 9560
+  selector:
+    app: db2exporter
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app: db2exporter
+  name: db2exporter-service-monitor
+  namespace: commerce
+spec:
+  endpoints:
+  - interval: 5s
+    port: metrics
+  selector:
+    matchLabels:
+      app: db2exporter
