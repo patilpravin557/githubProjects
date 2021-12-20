@@ -111,3 +111,62 @@ https://medium.com/faun/understanding-how-kubernetes-readiness-and-liveness-prob
  
 
  
+kubectl edit deployment demoprodlivecrs-app -n commerce 
+ 
+livenessProbe: 
+
+  failureThreshold: 3 
+
+  httpGet: 
+
+    path: / 
+
+    port: 8080 
+
+    scheme: HTTP 
+
+  initialDelaySeconds: 30 
+
+  periodSeconds: 10 
+
+  successThreshold: 1 
+
+  timeoutSeconds: 1 
+
+ 
+
+readinessProbe: 
+
+  failureThreshold: 3 
+
+  httpGet: 
+
+    path: / 
+
+    port: 8080 
+
+    scheme: HTTP 
+
+   periodSeconds: 10 
+
+   successThreshold: 1 
+
+   timeoutSeconds: 1 
+   
+   
+   
+   ##Testing the probe manually
+
+Example 
+
+ 
+
+A) port-forward  
+
+kubectl port-forward demoqalivesearch-app-slave-5b5dff4c89-7d6dh -n commerce 13737:3737 & 
+
+ 
+
+curl -v -u spiuser:passw0rd http://127.0.0.1:13737/search/admin/resources/health/status?type=container 
+
+ 
