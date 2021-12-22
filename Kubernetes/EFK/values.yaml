@@ -1,0 +1,32 @@
+ingress:
+  enabled: true
+  path: /
+  hosts:
+    - es.demoqalive.nonprod.hclpnp.com
+  tls: []
+
+spec:
+  nodeSelector:
+    elasticsearch=local-storage
+
+volumeClaimTemplate:
+  accessModes: [ "ReadWriteOnce" ]
+  storageClassName: local-storage
+  resources:
+    requests:
+      storage: 10Gi
+
+esJavaOpts: "-Xmx5g -Xms5g"
+
+resources:
+  requests:
+    cpu: 500m
+    memory: "7Gi"
+  limits:
+    cpu: 8
+    memory: "7Gi"
+
+esConfig:
+  elasticsearch.yml: |
+    indices.fielddata.cache.size: "20%"
+    indices.queries.cache.size: "30%"
