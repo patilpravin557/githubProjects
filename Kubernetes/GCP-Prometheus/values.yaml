@@ -1,0 +1,22 @@
+grafana:
+  persistence:
+    type: pvc
+    enabled: true
+    accessModes:
+      - ReadWriteOnce
+    size: 1Gi
+    finalizers:
+      - kubernetes.io/pvc-protection
+ 
+prometheus:
+  prometheusSpec:
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          # Name of the PV you created beforehand
+          #volumeName: prometheus-pv
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              # Size below should match your existing PV's size
+              storage: 50Gi
