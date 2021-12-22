@@ -1,0 +1,228 @@
+--
+-- Persistent Volume Definitions
+-- =============================
+--
+-- [root@COMP-4115-1 nifi]# kubectl get nodes
+-- NAME          STATUS   ROLES    AGE   VERSION
+-- comp-4114-1   Ready    <none>   12d   v1.18.6
+-- comp-4115-1   Ready    master   12d   v1.18.0
+-- comp-4116-1   Ready    <none>   12d   v1.18.0
+--
+-- comp-4114-1
+--  mkdir /pv/ls-es-1       && chmod 777 /pv/ls-es-1
+--  mkdir /pv/ls-zk         && chmod 777 /pv/ls-zk
+--  mkdir /pv/ls-prometheus && chmod 777 /pv/ls-prometheus
+--  mkdir /pv/ls-grafana    && chmod 777 /pv/ls-grafana
+--
+-- comp-4114-1     comp-4115-1     comp-4116-1
+-- ===========     ===========     ===========
+-- es-1            es-2            es-3
+-- zk              nifi
+-- prometheus
+-- grafana
+--
+--
+--
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ls-es
+provisioner: kubernetes.io/no-provisioner
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+----
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ls-zk
+provisioner: kubernetes.io/no-provisioner
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+----
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ls-prometheus
+provisioner: kubernetes.io/no-provisioner
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+----
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ls-grafana
+provisioner: kubernetes.io/no-provisioner
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+----
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ls-nifi
+provisioner: kubernetes.io/no-provisioner
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+----
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-es-1-comp-4114-1
+spec:
+  capacity:
+    storage: 20Gi
+  volumeMode: Filesystem
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: ls-es
+  local:
+    path: /pv/ls-es-1
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/hostname
+            operator: In
+            values:
+              - comp-4114-1
+----
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-es-2-comp-4115-1
+spec:
+  capacity:
+    storage: 20Gi
+  volumeMode: Filesystem
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: ls-es
+  local:
+    path: /pv/ls-es-2
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/hostname
+            operator: In
+            values:
+              - comp-4115-1
+----
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-es-3-comp-4116-1
+spec:
+  capacity:
+    storage: 20Gi
+  volumeMode: Filesystem
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: ls-es
+  local:
+    path: /pv/ls-es-3
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/hostname
+            operator: In
+            values:
+              - comp-4116-1
+----
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-zk-comp-4114-1
+spec:
+  capacity:
+    storage: 20Gi
+  volumeMode: Filesystem
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: ls-zk
+  local:
+    path: /pv/ls-zk
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/hostname
+            operator: In
+            values:
+              - comp-4114-1
+----
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-prometheus-comp-4114-1
+spec:
+  capacity:
+    storage: 20Gi
+  volumeMode: Filesystem
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: ls-prometheus
+  local:
+    path: /pv/ls-prometheus
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/hostname
+            operator: In
+            values:
+              - comp-4114-1
+----
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-grafana-comp-4114-1
+spec:
+  capacity:
+    storage: 20Gi
+  volumeMode: Filesystem
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: ls-grafana
+  local:
+    path: /pv/ls-grafana
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/hostname
+            operator: In
+            values:
+              - comp-4114-1
+----
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-nifi-comp-4115-1
+spec:
+  capacity:
+    storage: 20Gi
+  volumeMode: Filesystem
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: ls-nifi
+  local:
+    path: /pv/ls-nifi
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/hostname
+            operator: In
+            values:
+              - comp-4115-1
+
+
+
