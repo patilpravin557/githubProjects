@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  # Unique key of the Deployment instance
+  name: ts-utls
+  labels:
+    app: ts-utils
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ts-utils
+  template:
+    metadata:
+      labels:
+        app: ts-utils
+    spec:
+      containers:
+      - name: ts-utils
+        # Run this image
+        image: us.gcr.io/commerce-product/release/9.1.0.0/ts-utils:9.1.0.0
+        command:
+          - /bin/sh
+          - "-c"
+          - "sleep 60m"
