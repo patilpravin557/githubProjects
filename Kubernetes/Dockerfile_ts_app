@@ -1,0 +1,288 @@
+#FROM comlnx94.prod.hclpnp.com/9.1.2.0/ts-app:v9-latest
+#FROM comlnx94.prod.hclpnp.com/9.1.1.0/ts-app:v9-20200717-1235
+FROM comlnx94.prod.hclpnp.com/9.1.6.0/ts-app:v9-20210319-0920
+
+
+#Foundation.jar file for MRUDynamicMap objects 
+#COPY ./Foundation-Server.jar /opt/WebSphere/AppServer/profiles/default/installedApps/localhost/ts.ear/Foundation-Server.jar
+
+#Jvm arguments for heapdump
+#Run run add-generic-jvmarg -Xdump:heap:events=user
+
+#Cache Configuration
+#COPY ./cache_cfg.yaml /SETUP/hcl-cache/
+
+#########################################################################
+# Debug Configuration
+#COPY ./hcl-cache-1.0.jar /opt/WebSphere/AppServer/plugins/hcl-cache-bundle-1.0.jar
+
+#############################
+#enable access log
+#COPY enable_access_logs.py /SETUP/scripts
+#RUN sed -i "76i# Enabling access log\n/opt/WebSphere/AppServer/profiles/default/bin/wsadmin.sh -conntype NONE -f /SETUP/scripts/enable_access_logs.py '\"%r\" %D' \$\{LOG_PATH\}\n\n" /SETUP/bin/entrypoint.sh
+#RUN sed -i "76i# Enabling access log\n/opt/WebSphere/AppServer/profiles/default/bin/wsadmin.sh -conntype NONE -f /SETUP/scripts/enable_access_logs.py '%h %i %u %t \"%r\" %s %b %D' \$\{LOG_PATH\}\n\n" /SETUP/bin/entrypoint.sh
+
+
+#RUN echo $'\nrun update-admin-password configadmin passw0rd\n' >> /SETUP/bin/custConfiguration.sh
+#RUN chmod u+x /SETUP/bin/custConfiguration.sh
+
+
+################
+# Logging
+#COPY binary_logging.py /SETUP/ext-config/binary_logging.py
+#RUN cp /SETUP/bin/entrypoint.sh /SETUP/bin/entrypoint.sh.back
+#RUN cat /SETUP/bin/entrypoint.sh.back | sed 's/while \[ ! -f $traceFile \]; do sleep 0.1; done//' | sed 's/tail -F $traceFile --pid $SERVER_PID -n +0 \&/\/opt\/WebSphere\/AppServer\/bin\/logViewer.sh -monitor 1 -resumable -resume -format json \&/' > /SETUP/bin/entrypoint.sh
+#RUN echo "/profile/bin/wsadmin.sh -conntype None -f /SETUP/ext-config/binary_logging.py" > /SETUP/bin/custConfiguration.sh
+#RUN chmod u+x /SETUP/bin/entrypoint.sh
+#RUN chmod u+x /SETUP/bin/custConfiguration.sh
+#RUN mkdir -p /opt/WebSphere/AppServer/profiles/default/logs/server1/logdata
+
+#Install modified cachespec for disabling user caching
+#copy cachespec.xml /opt/WebSphere/AppServer/profiles/default/installedApps/localhost/ts.ear/InitializationServlet.war/WEB-INF/cachespec.xml
+#copy cachespec.xml /opt/WebSphere/AppServer/profiles/default/config/cells/localhost/applications/ts.ear/deployments/ts/Stores.war/WEB-INF/cachespec.xml
+#copy cachespec.xml /opt/WebSphere/AppServer/profiles/default/installedApps/localhost/ts.ear/Stores.war/WEB-INF/cachespec.xml
+copy cachespec.xml /opt/WebSphere/AppServer/profiles/default/installedApps/localhost/ts.ear/Rest.war/WEB-INF/cachespec.xml
+
+#########################################################################
+# Cache configuration
+
+################
+##Disable cache
+# user
+#Added <CrossTransactionCache maxTimeToLive=172800/>
+#Added <WCSessionDistributedMapCache enabled="true" maxTimeToLive="3600" />                      
+COPY ./wc-server.xml /opt/WebSphere/AppServer/profiles/default/installedApps/localhost/ts.ear/xml/config/wc-server.xml
+#other
+#COPY ./cache_cfg.yaml /SETUP/hcl-cache/cache_cfg.yaml
+
+#################
+# HCL Cache Patches
+#COPY hcl-cache-1.0.jar /opt/WebSphere/AppServer/plugins/hcl-cache-bundle-1.0.jar
+
+################
+# RESET TO Dynacache
+#RUN run set-cache-provider dynacache all
+
+#################
+# Now Enabled in Helm Charts
+# ENV EXPOSE_METRICS true
+
+#########################################################################
+# Other configuration
+
+#################
+# JVM configuration
+# Update HEAP Size
+#RUN run set-heap-size 512 1024
+#RUN run set-heap-size 512 4096
+
+################
+# Configuring PromotionArgument database records to reduce locking conflicts
+# https://help.hcltechsw.com/commerce/9.0.0/admin/tasks/tprconfigpromoargument.html?hl=promotionargument%2Cdatabase%2Crecords%2Creduce%2Clocking%2Cconflicts
+# Not fixed in 9.1.1.0/ts-app=v9-20200717-1235
+#RUN sed -i 's/PromotionArgumentSessionBeanPersistenceManager/PromotionArgumentNoPromoargSessionBeanPersistenceManager/g' /opt/WebSphere/AppServer/profiles/default/installedApps/localhost/ts.ear/xml/PromotionEngineConfiguration/WCSPromotionEngineConfig.xml
+
+#
+################
+# Reset WAS Admin user password
+#RUN run update-admin-password configadmin passw0rd
+#RUN echo "run update-admin-password configadmin passw0rd" >> /SETUP/bin/custConfiguration.sh
+#RUN chmod u+x /SETUP/bin/custConfiguration.sh
+
+################
+# Set webSphereDefaultIsolationLevel==2 - Unsets default level RS
+# COPY ./updateWCDSAttribute.py /SETUP/bin/updateWCDSAttribute.py
+# RUN echo "/opt/WebSphere/AppServer/profiles/default/bin/wsadmin.sh -conntype NONE -f /SETUP/bin/updateWCDSAttribute.py webSphereDefaultIsolationLevel java.lang.Integer 2" >> /SETUP/bin/custConfiguration.sh
+# update-datasource-attribute  -j <JDBCProvider>
+#                                 -d <Datasource>
+#                                 -n <AttrName>
+#                                 -t <AttrType>
+#                                 -v <AttrValue>							 
+#RUN run update-datasource-attribute -n webSphereDefaultIsolationLevel -t integer -v 2
+
+
+################
+# New Relic
+# TS_APP_WCS_V9_PERF_CLUSTER_1
+# Specify New Relic Env. Variables in the helm values.yaml
+#COPY ./newrelic.jar /opt/WebSphere/AppServer/profiles/default/servers/server1/newrelic.jar
+#COPY ./newrelic.yml /opt/WebSphere/AppServer/profiles/default/servers/server1/newrelic.yml
+##RUN run add-generic-jvmarg "-javaagent:/opt/WebSphere/AppServer/profiles/default/servers/server1/newrelic.jar"
+
+################
+#Debug SSL
+##RUN run add-generic-jvmarg -Djavax.net.debug=all
+##RUN run set-trace-specification "*=info:SSL=all"
+
+################
+# Debug HCLCache
+# grep for "Redisson Exec Time"
+#RUN run set-trace-specification "com.hcl.commerce.cache.remote.HCLCachePerf=all"
+
+
+################
+# Service Logger
+# Run with this syntax (6 arguments)
+# usage: /opt/WebSphere/AppServer/profiles/default/bin/wsadmin.sh -conntype NONE -f change_log.py <log_maxNumberOfBackupFiles> <log_rolloverSize> <err_maxNumberOfBackupFiles> <err_rolloverSize> <trc_maxNumberOfBackupFiles> <trc_rolloverSize>
+#COPY ./change_logs.py /SETUP/bin/change_logs.py
+#RUN run set-trace-specification "com.ibm.commerce.foundation.logging.service.*=all:com.hcl.commerce.cache.remote.HCLCache*=all"
+#RUN echo "/opt/WebSphere/AppServer/profiles/default/bin/wsadmin.sh -conntype NONE -f /SETUP/bin/change_logs.py 20 100 10 100 20 100" >> /SETUP/bin/custConfiguration.sh
+ 
+# Kafka - configure in helm values.yaml
+#  envParameters:
+#    ZOOKEEPER_SERVERS: my-kafka-zookeeper.kafka.svc.cluster.local:2181
+#    KAFKA_SERVERS: my-kafka.kafka.svc.cluster.local:9092
+#    KAFKA_TOPIC_PREFIX: sample
+
+################
+# Enable JMX Exporter
+#RUN echo "lowercaseOutputName: true" >> /SETUP/lib/config.yaml
+#RUN echo "lowercaseOutputLabelNames: true" >> /SETUP/lib/config.yaml
+#COPY jmx_prometheus_javaagent-0.3.1.jar /SETUP/lib/
+##RUN run add-generic-jvmarg -javaagent:/SETUP/lib/jmx_prometheus_javaagent-0.3.1.jar=18080:/SETUP/lib/config.yaml
+##RUN run add-generic-jvmarg -Djavax.management.builder.initial=
+
+################
+# Enable HTTP Access Logging
+# <services xmi:type="loggingservice.http:HTTPAccessLoggingService" xmi:id="HTTPAccessLoggingService_1183122130078" enable="false" enableErrorLogging="true" enableAccessLogging="true">
+#   <errorLog xmi:id="LogFile_1183122130078" filePath="/opt/WebSphere/AppServer/profiles/default/logs/container/ts_demoqalivets-app-5685f946ff-flpmb/http_error.log" maximumSize="500"/>
+#   <accessLog xmi:id="LogFile_1183122130079" filePath="/opt/WebSphere/AppServer/profiles/default/logs/container/ts_demoqalivets-app-5685f946ff-flpmb/http_access.log" maximumSize="500"/>
+# </services>
+#RUN sed -i 's/xmi\:id\="HTTPAccessLoggingService_1183122130078" enable\="false"/xmi\:id\="HTTPAccessLoggingService_1183122130078" enable="true"/g' /opt/WebSphere/AppServer/profiles/default/config/cells/localhost/nodes/localhost/servers/server1/server.xml
+#RUN sed -i 's/enableAccessLogging=\"true\"/enableAccessLogging=\"true\" accessLogFormat=\"COMBINED\"/g' /opt/WebSphere/AppServer/profiles/default/config/cells/localhost/nodes/localhost/servers/server1/server.xml
+
+################
+# Logging
+#COPY binary_logging.py /SETUP/ext-config/binary_logging.py
+#RUN cp /SETUP/bin/entrypoint.sh /SETUP/bin/entrypoint.sh.back
+#RUN cat /SETUP/bin/entrypoint.sh.back | sed 's/while \[ ! -f $traceFile \]; do sleep 0.1; done//' | sed 's/tail -F $traceFile --pid $SERVER_PID -n +0 \&/\/opt\/WebSphere\/AppServer\/bin\/logViewer.sh -monitor 1 -resumable -resume -format json \&/' > /SETUP/bin/entrypoint.sh
+#RUN echo "/profile/bin/wsadmin.sh -conntype None -f /SETUP/ext-config/binary_logging.py" > /SETUP/bin/custConfiguration.sh
+#RUN chmod u+x /SETUP/bin/entrypoint.sh
+#RUN chmod u+x /SETUP/bin/custConfiguration.sh
+#RUN mkdir -p /opt/WebSphere/AppServer/profiles/default/logs/server1/logdata
+
+
+################
+# Install Cache Monitor II
+#
+#COPY ./cache-monitor-install.py /SETUP/scripts/cache-monitor-install.py
+#COPY ./cachemonitor7_update.zip /SETUP/scripts/cachemonitor7_update.zip
+#COPY ./cache-monitor-autostart.py /SETUP/scripts/cache-monitor-autostart.py
+#RUN run enable-cache-monitor-auto-start true
+
+#########################################################################
+# Enable for Cache Monitor
+#RUN run enable-cache-monitor-auto-start true
+#RUN echo "run update-admin-password configadmin passw0rd" >> /SETUP/bin/custConfiguration.sh
+#RUN chmod u+x /SETUP/bin/custConfiguration.sh
+
+################
+# Update Cache sizes using scripts directly
+#COPY ./update_cache_sizes.py /SETUP/scripts/update_cache_sizes.py
+#RUN /opt/WebSphere/AppServer/profiles/default/bin/wsadmin.sh -conntype NONE -f /SETUP/scripts/cache-monitor-install.py
+#RUN /opt/WebSphere/AppServer/profiles/default/bin/wsadmin.sh -conntype NONE -f /SETUP/scripts/cache-monitor-autostart.py true
+#Replace with RUN Engine Commands
+#RUN /opt/WebSphere/AppServer/profiles/default/bin/wsadmin.sh -conntype NONE -f /SETUP/scripts/update_cache_sizes.py
+
+###############################################################
+# Engine commands wil work for ts-app only. Liberty use cache overides
+
+#RUN run update-objectcache-size services/cache/WCUserDistributedMapCache 40000 55
+#RUN run update-objectcache-size services/cache/WCCatalogEntryDistributedMapCache 40000 95
+#RUN run update-objectcache-size services/cache/DM_Cache 5000 10
+#RUN run update-objectcache-size services/cache/WCPriceDistributedMapCache 40000 95
+#RUN run update-objectcache-size services/cache/WCCatalogGroupDistributedMapCache 10000 20
+#RUN run update-objectcache-size services/cache/WCSearchSTADistributedMapCache 40000 50
+#RUN run update-objectcache-size services/cache/WCSearchDistributedMapCache 5000 20 
+#RUN run update-objectcache-size services/cache/WCContractDistributedMapCache 5000 10
+#RUN run update-objectcache-size services/cache/WCSystemDistributedMapCache 5000 10
+#RUN run update-objectcache-size dmap/PR_Cache 2000 20
+#RUN run update-objectcache-size services/cache/WCPromotionDistributedMapCache 5000 10
+#RUN run update-objectcache-size services/cache/WCFlexFlowDistributedMapCache 200 5
+
+######################################################################################
+
+
+#RUN run update-objectcache-size baseCache 20000 400
+#RUN run update-objectcache-size baseCache 20000
+#RUN run update-objectcache-size dmap/IVCache 20000 200
+#RUN run update-objectcache-size dmap/IVCache 20000
+#RUN run update-objectcache-size dmap/PriceCache 20000 200
+#RUN run update-objectcache-size dmap/PriceCache 20000
+#RUN run update-objectcache-size services/cache/DM_Cache 300000 200
+#RUN run update-objectcache-size services/cache/DM_Cache 300000
+#RUN run update-objectcache-size services/cache/DM_UserCache 10000 200
+#RUN run update-objectcache-size services/cache/DM_UserCache 10000
+#RUN run update-objectcache-size services/cache/WCFlexFlowDistributedMapCache 1000 3
+#RUN run update-objectcache-size services/cache/WCFlexFlowDistributedMapCache 1000
+#RUN run update-objectcache-size dmap/IC_Cache 5000 200
+#RUN run update-objectcache-size dmap/IC_Cache 5000
+#RUN run update-objectcache-size services/cache/WCLayoutDistributedMapCache 1000 3
+#RUN run update-objectcache-size services/cache/WCLayoutDistributedMapCache 1000
+#RUN run update-objectcache-size services/cache/PT_Cache 1000 200
+#RUN run update-objectcache-size services/cache/PT_Cache 1000
+#RUN run update-objectcache-size dmap/PR_Cache 5000 200
+#RUN run update-objectcache-size dmap/PR_Cache 5000
+#RUN run update-objectcache-size services/cache/WCRESTTagDistributedMapCache 1000 10
+#RUN run update-objectcache-size services/cache/WCRESTTagDistributedMapCache 1000
+#RUN run update-objectcache-size services/cache/WCSEORedirectRulesDistributedMapCache 1000 10
+#RUN run update-objectcache-size services/cache/WCSEORedirectRulesDistributedMapCache 1000
+#RUN run update-objectcache-size services/cache/WCSEOURLDistributedMapCache 10000 10
+#RUN run update-objectcache-size services/cache/WCSEOURLDistributedMapCache 10000
+#RUN run update-objectcache-size services/cache/WCSEOURLKeyword2URLTokenDistributedMapCache 5000 40
+#RUN run update-objectcache-size services/cache/WCSEOURLKeyword2URLTokenDistributedMapCache 5000
+#RUN run update-objectcache-size services/cache/WCSEOURLToken2URLKeywordDistributedMapCache 10000 25
+#RUN run update-objectcache-size services/cache/WCSEOURLToken2URLKeywordDistributedMapCache 10000
+#RUN run update-objectcache-size services/cache/WCSearchAttributeDistributedMapCache 5000 200
+#RUN run update-objectcache-size services/cache/WCSearchAttributeDistributedMapCache 5000
+#RUN run update-objectcache-size services/cache/WCSearchDistributedMapCache 5000 200
+#RUN run update-objectcache-size services/cache/WCSearchDistributedMapCache 5000
+#RUN run update-objectcache-size services/cache/WCSearchCatHierarchyDistributedMapCache 2000 200
+#RUN run update-objectcache-size services/cache/WCSearchCatHierarchyDistributedMapCache 2000
+#RUN run update-objectcache-size services/cache/WCSearchFacetDistributedMapCache 2000 200
+#RUN run update-objectcache-size services/cache/WCSearchFacetDistributedMapCache 2000
+#RUN run update-objectcache-size services/cache/WCSearchMerchandisingDistributedMapCache 1000 200
+#RUN run update-objectcache-size services/cache/WCSearchMerchandisingDistributedMapCache 1000
+#RUN run update-objectcache-size services/cache/WCSearchNavigationDistributedMapCache 1000 200
+#RUN run update-objectcache-size services/cache/WCSearchNavigationDistributedMapCache 1000
+#RUN run update-objectcache-size services/cache/WCSearchSTADistributedMapCache 100000 200
+#RUN run update-objectcache-size services/cache/WCSearchSTADistributedMapCache 100000
+#RUN run update-objectcache-size services/cache/WCWidgetDefinitionDistributedMapCache 1000 200
+#RUN run update-objectcache-size services/cache/WCWidgetDefinitionDistributedMapCache 1000
+#RUN run update-objectcache-size services/cache/WCSystemDistributedMapCache 2000 200
+#RUN run update-objectcache-size services/cache/WCSystemDistributedMapCache 2000
+#RUN run update-objectcache-size services/cache/WCSessionDistributedMapCache 1000 200
+#RUN run update-objectcache-size services/cache/WCSessionDistributedMapCache 1000
+#RUN run update-objectcache-size services/cache/WCContractDistributedMapCache 1000 200
+#RUN run update-objectcache-size services/cache/WCContractDistributedMapCache 1000
+#RUN run update-objectcache-size services/cache/WCPromotionDistributedMapCache 3000 200
+#RUN run update-objectcache-size services/cache/WCPromotionDistributedMapCache 3000
+#RUN run update-objectcache-size services/cache/WCMarketingDistributedMapCache 3000 200
+#RUN run update-objectcache-size services/cache/WCMarketingDistributedMapCache 3000
+#RUN run update-objectcache-size services/cache/WCUserDistributedMapCache 3000 200
+#RUN run update-objectcache-size services/cache/WCUserDistributedMapCache 120000
+#RUN run update-objectcache-size services/cache/WCCatalogGroupDistributedMapCache 120000 200
+#RUN run update-objectcache-size services/cache/WCCatalogGroupDistributedMapCache 120000
+#RUN run update-objectcache-size services/cache/WCCatalogEntryDistributedMapCache 100000 200
+#RUN run update-objectcache-size services/cache/WCCatalogEntryDistributedMapCache 100000
+#RUN run update-objectcache-size services/cache/WCPriceDistributedMapCache 100000 200
+#RUN run update-objectcache-size services/cache/WCPriceDistributedMapCache 100000
+#RUN run update-objectcache-size services/cache/WCMiscDistributedMapCache 3000 200
+#RUN run update-objectcache-size services/cache/WCMiscDistributedMapCache 3000
+#RUN run update-objectcache-size services/cache/WCDistributedMapCache 10 200
+#RUN run update-objectcache-size services/cache/WCDistributedMapCache 10
+#RUN run update-objectcache-size services/cache/WCStoreDistributedMapCache 1000 5
+#RUN run update-objectcache-size services/cache/WCStoreDistributedMapCache 1000
+#RUN run update-objectcache-size services/cache/WCSEOPageDefinitionDistributedMapCache 5000 200
+#RUN run update-objectcache-size services/cache/WCSEOPageDefinitionDistributedMapCache 5000
+#########################################################################
+
+
+
+
+
+
+
+
+
+

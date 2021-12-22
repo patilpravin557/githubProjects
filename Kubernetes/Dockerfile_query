@@ -1,0 +1,79 @@
+#FROM comlnx94.prod.hclpnp.com/9.1.4.0/search-query-app:v9-latest
+FROM comlnx94.prod.hclpnp.com/9.1.6.0/search-query-app:v9-latest
+
+
+#########################################################################
+# Other configuration
+
+
+#########################################################################
+# Debug Configuration
+#COPY ./hcl-cache-1.0.esa /SETUP/hcl-cache/
+#RUN /opt/WebSphere/Liberty/bin/installUtility uninstall --noPrompts hcl-cache-1.0
+#RUN /opt/WebSphere/Liberty/bin/installUtility install /SETUP/hcl-cache/hcl-cache-1.0.esa
+
+###########################################################################
+#Cache Configuration
+#COPY ./cache_cfg.yaml /SETUP/hcl-cache/
+
+##################################################################
+#verbose class 
+#RUN echo "-verbose:class" >> /opt/WebSphere/Liberty/usr/servers/default/jvm.options
+
+#################
+# JVM configuration
+# Update HEAP Size
+#RUN run set-heap-size 4096 6144
+#RUN run set-heap-size 512 2625
+#RUN run set-heap-size 512 14336
+RUN run set-heap-size 512 3072
+#RUN echo "-Xmx6g" >> /opt/WebSphere/Liberty/usr/servers/default/jvm.options
+################
+# Logging
+#COPY binary_logging.py /SETUP/ext-config/binary_logging.py
+#RUN cp /SETUP/bin/entrypoint.sh /SETUP/bin/entrypoint.sh.back
+#RUN cat /SETUP/bin/entrypoint.sh.back | sed 's/while \[ ! -f $traceFile \]; do sleep 0.1; done//' | sed 's/tail -F $traceFile --pid $SERVER_PID -n +0 \&/\/opt\/WebSphere\/AppServer\/bin\/logViewer.sh -monitor 1 -resumable -resume -format json \&/' > /SETUP/bin/entrypoint.sh
+#RUN echo "/profile/bin/wsadmin.sh -conntype None -f /SETUP/ext-config/binary_logging.py" > /SETUP/bin/custConfiguration.sh
+#RUN chmod u+x /SETUP/bin/entrypoint.sh
+#RUN chmod u+x /SETUP/bin/custConfiguration.sh
+#RUN mkdir -p /opt/WebSphere/AppServer/profiles/default/logs/server1/logdata
+
+#Jvm arguments for heapdump
+Run echo add-generic-jvmarg -Xdump:heap:events=user
+RUN echo "-Xdump:heap:events=user" >> /opt/WebSphere/Liberty/usr/servers/default/jvm.options
+RUN echo "-verbose:gc" >> /opt/WebSphere/Liberty/usr/servers/default/jvm.options
+RUN echo "-Xverbosegclog:verbosegc.%Y%m%d.%H%M%S.%pid.txt,5,100000" >> /opt/WebSphere/Liberty/usr/servers/default/jvm.options
+    
+# Custom Logging
+COPY ./logging.xml /opt/WebSphere/Liberty/usr/servers/default/configDropins/overrides/logging.xml
+
+# Enable Cache Setting in Number Of Entries
+#COPY ./server.xml /opt/WebSphere/Liberty/usr/servers/default/server.xml 
+
+
+##### Test Cache TTL of 300 (5 mins.) vs 172800 (48 hours)
+#COPY ./cachespec.xml /opt/WebSphere/Liberty/usr/servers/default/apps/search-query.ear/search-query.war/WEB-INF/cachespec.xml 
+#COPY ./wc-component.json /opt/WebSphere/Liberty/usr/servers/default/apps/search-query.ear/search-query.war/WEB-INF/classes/wc-component.json 
+
+#################
+# Enable Json format/Log Level/console output of log types 
+#COPY ./bootstrap.properties /opt/WebSphere/Liberty/usr/servers/default/bootstrap.properties
+#RUN echo "com.ibm.ws.logging.console.format=json" >> /opt/WebSphere/Liberty/usr/servers/default/bootstrap.properties
+#RUN echo "com.ibm.ws.logging.console.log.level=info" >> /opt/WebSphere/Liberty/usr/servers/default/bootstrap.properties
+#RUN echo "com.ibm.ws.logging.console.source=message,trace,accessLog,ffdc,audit" >> /opt/WebSphere/Liberty/usr/servers/default/bootstrap.properties
+
+
+#################################
+#Enable the Health Center
+#Run echo "-Xhealthcenter:level=headless" >> /opt/WebSphere/Liberty/usr/servers/default/jvm.options
+#Run echo "-Dcom.ibm.java.diagnostics.healthcenter.headless.output.directory=/profile/logs/healthcenter" >> /opt/WebSphere/Liberty/usr/servers/default/jvm.options
+#Run echo "-Dcom.ibm.java.diagnostics.healthcenter.headless.run.duration=15" >> /opt/WebSphere/Liberty/usr/servers/default/jvm.options
+#Run echo "-Dcom.ibm.diagnostics.healthcenter.data.profiling=off" >> /opt/WebSphere/Liberty/usr/servers/default/jvm.options 
+#Run echo "-Dcom.ibm.java.diagnostics.healthcenter.allocation.threshold.low=10000000" >> /opt/WebSphere/Liberty/usr/servers/default/jvm.options
+#Run echo "-Dcom.ibm.java.diagnostics.healthcenter.stack.trace.depth=20"  >> /opt/WebSphere/Liberty/usr/servers/default/jvm.options 
+#Run echo "-Dcom.ibm.java.diagnostics.healthcenter.headless.files.to.keep=0" >> /opt/WebSphere/Liberty/usr/servers/default/jvm.options
+
+
+
+
+
