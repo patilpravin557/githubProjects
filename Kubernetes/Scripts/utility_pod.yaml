@@ -1,0 +1,24 @@
+# kubectl create -f utility-app-pod.yaml -n commerce
+# kubectl delete pod utility-app -n commerce
+# kubectl exec -it -n commerce utility-app -- bash
+#  cd /opt/WebSphere/CommerceServer90/bin/
+#  ./stagingprop.sh -scope _all_ -dbtype DB2 -sourcedb demoqaauthdb.commerce.svc.cluster.local:50000/mall -sourcedb_user wcs -sourcedb_passwd wcs1 -destdb demoqalivedb.commerce.svc.cluster.local:50000/mall -destdb_user wcs -destdb_passwd wcs1
+# shortcuts for live and auth DBs:
+# kubectl exec -it -n commerce `kubectl get pod -n commerce -l component=demoqaauthdb -o jsonpath="{.items[0].metadata.name}"` -- bash
+# kubectl exec -it -n commerce `kubectl get pod -n commerce -l component=demoqalivedb -o jsonpath="{.items[0].metadata.name}"` -- bash
+apiVersion: v1
+kind: Pod
+metadata:
+  name: utility-app
+  namespace: commerce
+  labels:
+    app: utility-app
+spec:
+  containers:
+  - name: utility-app
+    image: comlnx94.prod.hclpnp.com/9.1.4.0/ts-utils:v9-latest
+    imagePullPolicy: IfNotPresent
+    env:
+    - name: LICENSE
+      value: accept
+  restartPolicy: Always
