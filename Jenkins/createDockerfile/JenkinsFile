@@ -1,0 +1,24 @@
+pipeline {
+    parameters {
+       string(defaultValue: "demo", description: 'Tenant Name' name: 'Tenant')
+       string(defaultValue: "qa", description: 'environment name', name: 'EnvName')
+       choice(choices: " \nts-app\ncrs-app\nsearch-app\nxc-app", description: 'target bundle component', name: 'Component')
+       string(defaultValue: "default", description: 'namespace name', name: 'NameSpace')
+       text(defaultValue: "FROM {{ docker_url }}/commerce/{{ base_app }}:{{ base_app_tag }} COPY CusDeploy /SETUP/Cus RUN /SETUP/bin/applyCustomization.sh", description: 'define new dockerfile', name: 'New_Dockerfile')
+    }
+    agent none
+    stages {
+        stage('Create Dockerfile of Specified Component On Target Env ') {
+            agent { label 'master' }
+            steps {
+                script{
+                      if(env.Component ==''){
+                         sh "python3.6 /commerce-devops-utilities/utilities/kube/kubcli.py createconfmap -tenant ${Tenant} -env ${EnvName} -name dockerfile -namespace ${NameSpace} -rawconfig 'Dockerfile::${New_Dockerfile}'"
+                      }else{
+                         sh "python3.6 /commerce-devops-utilities/utilities/kube/kubcli.py createconfmap -tenant ${Tenant} -env ${EnvName} -name ${Component}-dockerfile -namespace ${NameSpace} -rawconfig 'Dockerfile::${New_Dockerfile}'"
+                      }
+                } 
+            }
+        }
+    }
+}
