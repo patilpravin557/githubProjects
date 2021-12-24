@@ -1,0 +1,109 @@
+pipeline{
+    agent any
+	options {
+		buildDiscarder(logRotator(
+				// number of builds to keep
+				numToKeepStr:         env.BRANCH_NAME ==~ /master/ ? '300' : '20'
+				))
+		disableConcurrentBuilds()
+	}	
+    stages {
+      stage('Build project'){
+        steps {
+          script { 
+		  
+	        //get committer's details and github repo name
+		  env.GET_BRANCH = sh(returnStdout: true, script: "echo '${env.BRANCH_NAME}' | cut -f1 -d '-'").trim()
+		  branch_name = "${env.GET_BRANCH}"				
+                  committerEmail = sh (script: 'git --no-pager show -s --format=\'%ae\'', returnStdout: true).trim()
+	          commiterName = sh (script: 'git show -s --pretty=%an | awk \'{print $1}\'', returnStdout: true).trim()
+	          reponame = sh (script: 'basename -s .git `git config --get remote.origin.url`', returnStdout: true).trim()
+		  build_team = '$DEFAULT_RECIPIENTS'
+			  
+            if (env.BRANCH_NAME =~ '^master$|^9.1.0$|^avengers$') {
+		    
+		    //Initiate build process for main branches 
+			  sh """
+			    echo 'Working on release branch: ${env.BRANCH_NAME}'
+				sh prepare.sh ${env.BRANCH_NAME}
+				sh mvnw clean deploy -Dmaven.install.skip=true -U
+				sh deployESA.sh
+				sh deployConfig.sh
+				sh mvnw clean
+			  """
+            } else if (env.BRANCH_NAME =~ 'gmv-federal$') {
+			  sh """
+			    echo 'Working on gmv branch: ${env.BRANCH_NAME}'
+				sh prepare.sh $branch_name
+				sh mvnw clean deploy -Dmaven.install.skip=true -U
+				sh deployESA.sh
+				sh deployConfig.sh
+				sh mvnw clean
+			  """
+            } else {
+			  sh """
+			    echo 'Working on build branch: ${env.BRANCH_NAME}'
+				sh prepare.sh default
+				sh mvnw -s settings.xml clean package -U
+				sh runUnitTest.sh
+				sh mvnw -s settings.xml clean
+			  """
+		      }
+		  }
+	      }
+	  }
+	 stage('Trigger hcl-cache-manager branch build') {
+	   steps {
+	     script {
+		   if (env.BRANCH_NAME =~ '^master$|^9.1.0$|^avengers$'){
+		     echo "Triggering job for branch ${env.BRANCH_NAME}"
+			 BRANCH_TO_TAG=env.BRANCH_NAME.replace("/","%2F")
+			 build job: "../hcl-cache-manager/${BRANCH_TO_TAG}", wait: false
+		   }
+		 }
+	      }
+	   }	  
+	}
+post {
+	   failure {
+         script {
+           if (env.BRANCH_NAME =~ '^master$|^9.0.1$|^9.1.0$|^avengers$') {
+             emailext (
+               to: "$committerEmail;$build_team",
+               subject: "$reponame ${env.BRANCH_NAME} branch #${env.BUILD_NUMBER} failed",
+               body: "Hi $commiterName," + "\n\nBuild failed for $reponame project, which is blocking the build. Please fix it." + "\n\nMerged changes:\n" +getChangeString() + "\nDeveloper should fixed the issues before ask for the code review and project owner should not merge the changes when branch build fails.\n" +"\nPlease find attached build failure logs.\n" + "\nRegards," + "\nBuild Team",
+               attachLog: true,
+             )
+           } else {
+             emailext (
+               to: "$committerEmail",
+               subject: "$reponame ${env.BRANCH_NAME} branch #${env.BUILD_NUMBER} failed",
+               body: "Hi $commiterName," + "\n\nBuild failed for $reponame project. Please fix it." + "\n\nChanges:\n" +getChangeString() + "\nPlease find attached build failure logs.\n" + "\nRegards," + "\nBuild Team",
+               attachLog: true,
+             )
+           }
+         }
+       }
+	}
+}
+@NonCPS
+def getChangeString() {
+    MAX_MSG_LEN = 100
+    def changeString = ""
+
+    echo "Gathering SCM changes"
+    def changeLogSets = currentBuild.changeSets
+    for (int i = 0; i < changeLogSets.size(); i++) {
+        def entries = changeLogSets[i].items
+        for (int j = 0; j < entries.length; j++) {
+            def entry = entries[j]
+            truncated_msg = entry.msg.take(MAX_MSG_LEN)
+            changeString += " - ${truncated_msg}\n"
+        }
+    }
+
+    if (!changeString) {
+        changeString = " - No new changes"
+    }
+    return changeString
+}
