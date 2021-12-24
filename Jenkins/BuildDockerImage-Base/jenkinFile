@@ -1,0 +1,47 @@
+podTemplate(label: 'golang-pod2',  containers: [
+     containerTemplate(
+            name: 'golang',
+            image: 'bxv8v141.cn.ibm.com/library/docker:dind',
+            ttyEnabled: true,
+            privileged: true,
+            command: 'cat',
+            alwaysPullImage: true
+        ),
+    containerTemplate(
+            name: 'jnlp',
+            image: 'bxv8v141.cn.ibm.com/library/jnlp-slave:alpine',
+            args: '${computer.jnlpmac} ${computer.name}',
+            command: ''
+
+        )
+  ],
+  volumes: [
+  	configMapVolume(mountPath: '/tmp/templates/',configMapName: "${params.group_id}${params.env_name}-dockerfile")
+  ]
+  ) 
+{
+    node ('golang-pod2') {
+        
+        container('golang') {
+            def build_info="""
+			{
+				"group": "$group_id",
+				"env": "$env_name",
+				"dockerRepo": "bxv8v141.cn.ibm.com",
+				"bundleRepo": "http://9.110.182.156:8081/nexus/content/repositories/releases/commerce",
+				"images": [
+   				 $images_info
+ 				]
+    
+			}
+			"""
+            stage('Build blog project') {
+                sh("dockerd --insecure-registry=bxv8v141.cn.ibm.com &")
+                sh("sleep 4")
+                sh("echo y | docker login bxv8v141.cn.ibm.com -u admin -p Harbor12345")
+                sh("python3.6 /commerce-devops-utilities/utilities/dockerbuild/buildCusDocker.py -vu $vault_url -vt $vault_token -ru $dockerRepoUser -rp $dockerRepoPwd -fpl $ForcePull_Image -fph $ForcePush_Image -i '${build_info}'")
+        
+            }
+        }
+    }
+}
