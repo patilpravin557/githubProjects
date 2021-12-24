@@ -1,0 +1,20 @@
+pipeline {
+    agent none
+    parameters {
+       string(defaultValue: "demo", description: 'group id', name: 'group_id')
+    }
+    stages {
+        stage('Create Tenant On Vault') {
+            agent { label 'jenkins-slave-utility' }
+            steps {
+                sh "python3.6 /commerce-devops-utilities/vault-utilities/initVault.py ${params.group_id} $vault_url $vault_token"
+            }
+        }
+        stage('Create Jenkins Job For Tenant') {
+            agent { label 'jenkins-slave-utility' }
+            steps {
+                sh "python3.6 /commerce-devops-utilities/jenkins-python/jenkins_user_control.py ${params.group_id} admin admin ${jenkins_server}"
+            }
+        }
+    }
+}
