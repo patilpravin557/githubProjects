@@ -1,0 +1,93 @@
+pipeline{
+    agent any
+    options {
+        buildDiscarder(logRotator(
+            // number of builds to keep
+            numToKeepStr: env.BRANCH_NAME ==~ /master/ ? '300' : '20'
+        ))
+        disableConcurrentBuilds()
+    }
+    stages {
+        stage('get commiter id') {
+            steps {
+                script {
+                    committerEmail = sh (script: 'git --no-pager show -s --format=\'%ae\'', returnStdout: true).trim()
+                }
+            }
+        }		
+        stage('build'){
+            parallel {
+                stage('Build Master') {
+                    when {
+                        branch 'master'
+                    } 
+                    steps {    
+                        sh '''
+                        cd master
+                        sh gradlew build publish 
+                        '''
+                    }
+                }
+                stage('Build Branch') {
+                    when { 
+                        not {
+                            anyOf{
+                                branch 'master';								
+                            }
+                        }
+                    } 
+                    steps {
+                        sh '''
+                        cd master					
+                        sh gradlew build
+                        '''
+                    }
+                }
+            }
+        }
+    }
+    post {
+    failure {
+      script {
+        if (env.BRANCH_NAME == 'master') {
+          emailext (
+            to: '$DEFAULT_RECIPIENTS',
+            subject: "${env.JOB_NAME} #${env.BUILD_NUMBER} ${env.BRANCH_NAME} failed",
+            body: "Changes:\n " + getChangeString() + "\n\n Check console output at: ${env.BUILD_URL}/console" + "\n",
+            attachLog: true,
+          )
+        } else {
+          emailext (
+            to: "$committerEmail",
+            subject: "${env.JOB_NAME} #${env.BUILD_NUMBER} ${env.BRANCH_NAME} failed",
+            body: "Changes:\n " + getChangeString() + "\n\n Check console output at: ${env.BUILD_URL}/console" + "\n",
+            attachLog: true,
+          )
+        }
+      }
+    }     
+  }		
+}
+
+def committerEmail = ""
+@NonCPS
+def getChangeString() {
+    MAX_MSG_LEN = 100
+    def changeString = ""
+
+    echo "Gathering SCM changes"
+    def changeLogSets = currentBuild.changeSets
+    for (int i = 0; i < changeLogSets.size(); i++) {
+        def entries = changeLogSets[i].items
+        for (int j = 0; j < entries.length; j++) {
+            def entry = entries[j]
+            truncated_msg = entry.msg.take(MAX_MSG_LEN)
+            changeString += " - ${truncated_msg}\n"
+        }
+    }
+
+    if (!changeString) {
+        changeString = " - No new changes"
+    }
+    return changeString
+}
