@@ -1,0 +1,21 @@
+pipeline {
+    agent none
+    parameters {
+       string(defaultValue: "demo", description: 'group id', name: 'group_id')
+       string(defaultValue: "qa", description: 'environment name', name: 'environment_name')
+       string(defaultValue: "", description: 'certification name', name: 'certName')
+       string(defaultValue: "", description: 'certification', name: 'certificate')
+       string(defaultValue: "", description: 'private key', name: 'private_key')
+       string(defaultValue: "", description: 'issuing certification', name: 'issuing_ca')
+       string(defaultValue: "", description: 'key store password', name: 'keystorepass')
+       string(defaultValue: "", description: 'ssl target server host', name: 'destination_host')
+    }
+    stages {
+        stage('pop cert') {
+            agent { label 'jenkins-slave-utility' }
+            steps {
+                sh "python3.6 /commerce-devops-utilities/vault-utilities/popVaultCert.py $group_id $vault_url $vault_token $environment_name $certName '$certificate' '${private_key}' '${issuing_ca}' '$keystorepass', '${destination_host}'"
+            }
+        }
+    }
+}
