@@ -2,20 +2,26 @@ grafana:
   persistence:
     type: pvc
     enabled: true
+    storageClassName: standard
     accessModes:
       - ReadWriteOnce
-    size: 1Gi
+    size: 15Mi
     finalizers:
       - kubernetes.io/pvc-protection
  
 prometheus:
   prometheusSpec:
+    # With below two lines service monitors defined by commerce will be picked up
+    serviceMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorSelector: {}
     storageSpec:
       volumeClaimTemplate:
         spec:
           # Name of the PV you created beforehand
           #volumeName: prometheus-pv
           accessModes: ["ReadWriteOnce"]
+          # StorageClass should match your existing PV's storage class
+          storageClassName: standard
           resources:
             requests:
               # Size below should match your existing PV's size
