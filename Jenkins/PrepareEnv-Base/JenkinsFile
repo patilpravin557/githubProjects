@@ -1,0 +1,43 @@
+pipeline {
+    agent none
+    parameters {
+       string(defaultValue: "demo", description: 'group id', name: 'group_id')
+       string(defaultValue: "qa", description: 'environment name', name: 'environment_name')
+       string(defaultValue: "auth", description: 'environment type [auth|live]', name: 'instance_type')
+       string(defaultValue: "marathon.l4lb.thisdcos.directory", description: 'specify domain name', name: 'domain_name')
+       string(defaultValue: "<tenant><env><envtyp>db.marathon.l4lb.thisdcos.directory", description: 'db_hostname', name: 'db_hostname')
+       string(defaultValue: "50000", description: 'db_port', name: 'db_port')
+       string(defaultValue: "mall", description: 'db_name', name: 'db_name')
+       string(defaultValue: "wcs", description: 'db_user', name: 'db_user')
+       string(defaultValue: "wcs1", description: 'db_password', name: 'db_password')
+       string(defaultValue: "db2inst1", description: 'dba_user', name: 'dba_user')
+       string(defaultValue: "diet4coke", description: 'dba_password', name: 'dba_password')
+       string(defaultValue: "", description: 'encrypted_merchantkey', name:'encrypted_merchantkey')
+       string(defaultValue: "bxv8v141.cn.ibm.com/commerce/",description:'The utility docker repo name', name:'imageRepo')
+       string(defaultValue: "", description: 'oidc Client ID', name:'oidcClientId')
+       string(defaultValue: "", description: 'oidc Client Secret', name:'oidcClientSecret')
+       string(defaultValue: "", description: 'blue ID server', name:'blueIDServer')
+       string(defaultValue: "", description: 'blue ID provider host', name:'blueIDProviderHost')
+       string(defaultValue: "True", name:'isTsDb')
+    }
+    stages {
+        stage('Pop env config to Vault ') {
+            agent { label 'jenkins-slave-utility' }
+            steps {
+                sh "python3.6 /commerce-devops-utilities/vault-utilities/popVaultEnv.py ${params.group_id} $vault_url $vault_token ${params.environment_name} ${params.instance_type} '${params.db_hostname}' '${params.db_port}' '${params.db_name}' '${params.db_user}' '${params.db_password}' '${params.dba_user}' '${params.dba_password}' '${params.domain_name}' '$encrypted_merchantkey'"
+            }
+        }
+        stage('pop encrypt env config to Vault '){
+            agent { label 'jenkins-slave-utility' }
+            steps {
+                sh "python3.6 /commerce-devops-utilities/vault-utilities/popVaultEnvEncrypt.py -t $group_id -vu $vault_url -vt $vault_token -e $environment_name -et $instance_type -tsdb $isTsDb -i '$imageRepo'"
+            }
+        }
+        stage('Pop OIDC config to Vault ') {
+            agent { label 'jenkins-slave-utility' }
+            steps {
+                sh "python3.6 /commerce-devops-utilities/vault-utilities/popOIDC.py ${params.group_id} $vault_url $vault_token ${params.environment_name} '${params.oidcClientId}' '${params.oidcClientSecret}' '${params.blueIDServer}' '${params.blueIDProviderHost}'"
+            }
+        }
+    }
+}
