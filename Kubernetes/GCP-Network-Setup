@@ -1,0 +1,162 @@
+# Network Configurations for GCP
+
+1. Ensure all VMs (Kubernetes Commerce, DB, OneTest) are in the same zone and with the same VPC (virtual network)
+2. Only use internal IPs
+   - To database
+   - Between OneTest agent and controllers
+   - To Commerce store (se below)
+3. Use premium network over standard everywhere
+4. Control number of connections in OneTest script to avoid unnecessary connect()
+
+## Defining internal ingress for reactstore
+
+To define an internal ingress for the react store, you need to use the existing ingress definition
+as a template, and make the required changes:
+
+```
+kubectl get ingress demoqalive-reactstore-ingress -o yaml > internal.yaml
+(( edit internal.yaml as per below))
+kubectl apply -f internal.yaml
+```
+
+*Important:* For the internal IP to work, there needs to be a subnet defined per VPC and zone. This might have already been created
+(only one is needed)
+
+
+### Updating the new ingress definition (internal.yaml)
+
+1. Change gce to gce-internal
+```
+ kubernetes.io/ingress.class: gce
+```
+to 
+```
+kubernetes.io/ingress.class: "gce-internal"
+```
+2. add ingress.allow-http: "false"
+```
+kubernetes.io/ingress.allow-http: "false"
+```
+3. Rename the hostname, eg. add `internal` before www
+4. Remove the unnecessary annotations e.g.
+```
+ingress.kubernetes.io/backends: '{"k8s-be-30040--160289f43eecf497":"HEALTHY","k8s1-160289f4-commerce-919-demoqa919livequery-app-3090-f24b2989":"HEALTHY","k8s1-160289f4-commerce-919-demoqa919livestore-web-6443-346cf919":"HEALTHY","k8s1-160289f4-commerce-919-demoqa919livets-app-5443-f01e340a":"HEALTHY","k8s1-160289f4-commerce-919-demoqa919livets-web-8000-e390da46":"HEALTHY","k8s1-160289f4-commerce-919-demoqa919tooling-web-7443-363f63c7":"HEALTHY"}'
+ingress.kubernetes.io/forwarding-rule: k8s2-fr-9akh94uf-commerce-9-demoqa919live-reactstore-i-lubb7ie1
+ingress.kubernetes.io/https-forwarding-rule: k8s2-fs-9akh94uf-commerce-9-demoqa919live-reactstore-i-lubb7ie1
+ingress.kubernetes.io/https-target-proxy: k8s2-ts-9akh94uf-commerce-9-demoqa919live-reactstore-i-lubb7ie1
+ingress.kubernetes.io/ssl-cert: k8s2-cr-9akh94uf-9vbdlxm299ab6ksf-07f0ca0afec2c083
+ingress.kubernetes.io/static-ip: k8s2-fr-9akh94uf-commerce-9-demoqa919live-reactstore-i-lubb7ie1
+ingress.kubernetes.io/target-proxy: k8s2-tp-9akh94uf-commerce-9-demoqa919live-reactstore-i-lubb7ie1
+ingress.kubernetes.io/url-map: k8s2-um-9akh94uf-commerce-9-demoqa919live-reactstore-i-lubb7ie1
+```
+5. Remove status section:
+```
+status:
+  loadBalancer:
+    ingress:
+    - ip: 34.149.98.26
+```
+
+### Sample file 
+
+```
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    ingress.kubernetes.io/backend-protocol: HTTPS
+    ingress.kubernetes.io/secure-backends: "true"
+    kubernetes.io/ingress.class: gce-internal
+    meta.helm.sh/release-name: <YOUR_RELEASE>
+    meta.helm.sh/release-namespace: commerce
+    kubernetes.io/ingress.allow-http: "false"
+  finalizers:
+  - networking.gke.io/ingress-finalizer-V2
+  generation: 1
+  labels:
+    app: HCL-Commerce
+    app.kubernetes.io/managed-by: Helm
+    chart: hcl-commerce-91.8.0
+    heritage: Helm
+    group: <YOUR_GROUP_E.G._DEMOQALIVE>
+    release: <YOUR_RELEASE>
+  name: <YOUR_GROUP_E.G._DEMOQALIVE>-reactstore-ingress-internal
+  namespace: commerce
+spec:
+  rules:
+  - host: www.internal.<YOUR_DOMAIN>.hclcommerce.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: <YOUR_GROUP_E.G._DEMOQALIVE>store-web
+            port:
+              number: 6443
+        path: /*
+        pathType: ImplementationSpecific
+      - backend:
+          service:
+            name: <YOUR_GROUP_E.G._DEMOQALIVE>store-web
+            port:
+              number: 6443
+        path: /wcsstore/*
+        pathType: ImplementationSpecific
+      - backend:
+          service:
+            name: <YOUR_GROUP_E.G._DEMOQALIVE>store-web
+            port:
+              number: 6443
+        path: /hclstore/*
+        pathType: ImplementationSpecific
+      - backend:
+          service:
+            name: <YOUR_GROUP_E.G._DEMOQALIVE>ts-app
+            port:
+              number: 5443
+        path: /wcs/*
+        pathType: ImplementationSpecific
+      - backend:
+          service:
+            name: <YOUR_GROUP_E.G._DEMOQALIVE>query-app
+            port:
+              number: 30901
+        path: /search/*
+        pathType: ImplementationSpecific
+      - backend:
+          service:
+            name: <YOUR_GROUP_E.G._DEMOQALIVE>ts-web
+            port:
+              number: 8000
+        path: /lobtools/*
+        pathType: ImplementationSpecific
+      - backend:
+          service:
+            name: <YOUR_GROUP_E.G._DEMOQALIVE>ts-web
+            port:
+              number: 8000
+        path: /rest/*
+        pathType: ImplementationSpecific
+      - backend:
+          service:
+            name: <YOUR_GROUP_E.G._DEMOQALIVE>ts-web
+            port:
+              number: 8006
+        path: /webapp/wcs/preview/*
+        pathType: ImplementationSpecific
+      - backend:
+          service:
+            name: <OURTENANT>tooling-web
+            port:
+              number: 7443
+        path: /tooling/*
+        pathType: ImplementationSpecific
+  tls:
+  - hosts:
+    - www.internal.<YOUR_DOMAIN>.hclcommerce.com
+    secretName: <YOUR_GROUP_E.G._DEMOQALIVE>-certificate
+```
+
+
+
+
+
