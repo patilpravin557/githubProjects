@@ -1,0 +1,52 @@
+pipeline {
+    agent none
+    parameters {
+       string(defaultValue: "demo", description: 'group id', name: 'group_id')
+       string(defaultValue: "qa", description: 'environment name', name: 'environment_name')
+       choice(choices: "auth\nlive\nall", description: 'environment type [auth|live|all]', name: 'envtype')
+       string(defaultValue: "", description: 'target image list', name: 'images')
+       choice(choices: 'true\nfalse', description: 'use db2 docker or not ?', name: 'isDB2Container')
+       choice(choices: 'true\nfalse', description: 'need launch index build after deploy ?', name: 'doBuildIndex')
+    }
+    stages {
+        stage('Prepare Data Volume On GlusterServer') {
+            agent { label 'jenkins-slave-storage' }
+            steps {
+               script {
+                   if (env.envtype == 'auth' || env.envtype == 'all') {
+                      sh "/Glusterfs/glusterVolume.sh create ${params.group_id}${params.environment_name}${params.envtype}-searchmaster"
+                   }
+
+                   if (env.envtype == 'live' || env.envtype == 'all') {
+                      sh "/Glusterfs/glusterVolume.sh create ${params.group_id}${params.environment_name}${params.envtype}-searchrepeater"
+                   }
+               }
+            }
+        }
+        stage('Launch Marathon Deploy ') {
+            agent { label 'jenkins-slave-utility' }
+            steps {
+                sh "python3.6 /commerce-devops-utilities/marathon/createWCSGroup.py -ms $marathonServerProtocol -dc $isDB2Container  -t $group_id -e $environment_name -vu $vault_url -vt $vault_token -i $images -d $debug -et $envtype"
+            }
+        }
+        stage('Trigger Build Index') {
+            agent { label 'jenkins-slave-dcos' }
+            when{
+                environment name:'doBuildIndex', value:'true'
+            }
+            steps {
+                   sh "python3.6 /commerce-devops-utilities/commerce-python/triggerBuildIndex.py $group_id $environment_name $envtype"
+            }
+        }
+        stage('Trigger Index Replication'){
+            agent {label 'jenkins-slave-dcos'}
+            steps{
+                script {
+                   if (env.envtype == 'live' || env.envtype == 'all') {
+                       sh "python3.6 /commerce-devops-utilities/commerce-python/triggerIndexRep.py $group_id $environment_name"
+                   }
+                }
+            }
+        }
+    }
+}
