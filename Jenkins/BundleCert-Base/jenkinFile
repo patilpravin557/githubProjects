@@ -1,0 +1,16 @@
+pipeline {
+    agent none
+    parameters {
+       string(defaultValue: "demo", description: 'group id', name: 'group_id')
+       string(defaultValue: "qa", description: 'environment name', name: 'environment_name')
+       choice(choices: "tsapp\ncrsapp\nsearchapp\nxcapp", description: 'target bundle component', name: 'component')
+    }
+    stages {
+        stage('Bundle certs selected') {
+            agent { label 'jenkins-slave-utility' }
+            steps {
+                sh "python3.6 /commerce-devops-utilities/commerce-python/certsBundle.py $group_id $vault_url $vault_token $environment_name $SelectedCerts $component"
+            }
+        }
+    }
+}
