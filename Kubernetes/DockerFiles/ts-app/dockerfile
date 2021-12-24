@@ -1,0 +1,282 @@
+#https://comlnx94.prod.hclpnp.com/v2/federal_9.1.7.0/ts-app/tags/list
+FROM comlnx94.prod.hclpnp.com/federal_9.1.7.0/ts-app:gmv1
+
+#################
+# ** SSLProvider Modifications
+COPY ./java.security /opt/WebSphere/AppServer/java/8.0/jre/lib/security/java.security
+
+#################
+# ** SSL revert to 915 Java version: JAVA_HOME 
+
+#copy to container path - /opt/WebSphere/AppServer/java/8.0
+#COPY ./ts.java.zip /opt/WebSphere/AppServer/
+#RUN unzip -o /opt/WebSphere/AppServer/ts.java.zip -d /opt/WebSphere/AppServer/
+
+
+################
+# Inventory Locking
+#https://help.hcltechsw.com/commerce/7.0.0/com.ibm.commerce.admin.doc/concepts/cwnNEWperformance.html
+#https://support.hcltechsw.com/csm?id=community_blog&sys_id=9b50b1951b21405483cb86e9cd4bcb3d&view_source=searchResult
+#<com.ibm.commerce.fulfillment.commands.InventoryUpdateHelper updateImmediately="true" />
+#RUN sed -i 's/<InstanceProperties>/<InstanceProperties>\n<com.ibm.commerce.fulfillment.commands.InventoryUpdateHelper updateImmediately="true" \/>/g' /opt/WebSphere/AppServer/profiles/default/installedApps/localhost/ts.ear/xml/config/wc-server.xml
+#kubectl cp commerce/cptqalivets-app-844b688cfb-2csqd:/opt/WebSphere/AppServer/profiles/default/installedApps/localhost/ts.ear/xml/config/wc-server.xml ./wc-server.xml.new
+#db2 "update wcs.inventory set inventoryflags = 1"
+
+COPY ./wc-server.xml.new /opt/WebSphere/AppServer/profiles/default/installedApps/localhost/ts.ear/xml/config/wc-server.xml
+
+
+################
+# OneDB
+#COPY onedbjdbc.jar /SETUP/driver/onedb/onedbjdbc.jar
+
+################
+# OneDB - patch for Optimistic Locking
+#COPY ./Enablement-BaseComponentsData.jar  /opt/WebSphere/AppServer/profiles/default/installedApps/localhost/ts.ear/Enablement-BaseComponentsData.jar
+
+################
+# OneDB - patch for SQL -244/-245
+#COPY ./createDataSource.py /SETUP/scripts/createDataSource.py
+
+################
+# Enable for Cache Monitor
+RUN run enable-cache-monitor-auto-start true
+RUN echo "run update-admin-password configadmin passw0rd" >> /SETUP/bin/custConfiguration.sh
+RUN chmod u+x /SETUP/bin/custConfiguration.sh
+
+################
+# REST Cache
+RUN cp /opt/WebSphere/AppServer/profiles/default/installedApps/localhost/ts.ear/Rest.war/WEB-INF/cachespec.xml.emerald.sample.store /opt/WebSphere/AppServer/profiles/default/installedApps/localhost/ts.ear/Rest.war/WEB-INF/cachespec.xml
+
+################
+# Marketing Command Cache
+# https://help.hcltechsw.com/commerce/9.1.0/admin/concepts/cdcmarcaccomcac.html
+COPY ./marketing.cachespec.xml /opt/WebSphere/AppServer/profiles/default/installedApps/localhost/ts.ear/Stores.war/WEB-INF/cachespec.xml
+
+#################
+# JVM configuration
+# Update HEAP Size
+#RUN run set-heap-size 512 2048
+
+################
+# Configuring PromotionArgument database records to reduce locking conflicts
+# https://help.hcltechsw.com/commerce/9.0.0/admin/tasks/tprconfigpromoargument.html?hl=promotionargument%2Cdatabase%2Crecords%2Creduce%2Clocking%2Cconflicts
+RUN sed -i 's/PromotionArgumentSessionBeanPersistenceManager/PromotionArgumentNoPromoargSessionBeanPersistenceManager/g' /opt/WebSphere/AppServer/profiles/default/installedApps/localhost/ts.ear/xml/PromotionEngineConfiguration/WCSPromotionEngineConfig.xml
+
+################
+# Enable HTTP Access Logging
+# <services xmi:type="loggingservice.http:HTTPAccessLoggingService" xmi:id="HTTPAccessLoggingService_1183122130078" enable="false" enableErrorLogging="true" enableAccessLogging="true">
+#   <errorLog xmi:id="LogFile_1183122130078" filePath="/opt/WebSphere/AppServer/profiles/default/logs/container/ts_demoqalivets-app-5685f946ff-flpmb/http_error.log" maximumSize="500"/>
+#   <accessLog xmi:id="LogFile_1183122130079" filePath="/opt/WebSphere/AppServer/profiles/default/logs/container/ts_demoqalivets-app-5685f946ff-flpmb/http_access.log" maximumSize="500"/>
+# </services>
+
+#RUN sed -i 's/xmi\:id\="HTTPAccessLoggingService_1183122130078" enable\="false"/xmi\:id\="HTTPAccessLoggingService_1183122130078" enable="true"/g' /opt/WebSphere/AppServer/profiles/default/config/cells/localhost/nodes/localhost/servers/server1/server.xml
+#RUN sed -i 's/enableAccessLogging=\"true\"/enableAccessLogging=\"true\" accessLogFormat=\"COMBINED\"/g' logging
+
+
+################
+# Enable username tracing
+# https://www.ibm.com/support/pages/how-do-i-log-user-id-user-successful-login-was-admin-console
+
+#RUN run set-trace-specification "com.ibm.ws.wim.registry.util.SecurityNameBridge=finest:*=info:enable.trace.log.*=all"  
+  
+#########################################################################
+# Old Configurations
+
+################
+# Inventory Locking
+#https://hclpnpsupport.hcltech.com/csm?id=community_blog&sys_id=9b50b1951b21405483cb86e9cd4bcb3d&view_source=searchResult
+#<com.ibm.commerce.fulfillment.commands.InventoryUpdateHelper updateImmediately="true" />
+#COPY ./wc-server.new.xml /opt/WebSphere/AppServer/profiles/default/installedApps/localhost/ts.ear/xml/config/wc-server.xml
+#RUN sed -i 's/<InstanceProperties>/<InstanceProperties>\n<com.ibm.commerce.fulfillment.commands.InventoryUpdateHelper updateImmediately="true" \/>/g' /opt/WebSphere/AppServer/profiles/default/installedApps/localhost/ts.ear/xml/config/wc-server.xml
+	
+################
+# Reset WAS Admin user password
+## Doesn't work -> RUN run update-admin-password configadmin passw0rd
+#RUN echo "run update-admin-password configadmin passw0rd" >> /SETUP/bin/custConfiguration.sh
+#RUN chmod u+x /SETUP/bin/custConfiguration.sh
+
+################
+# Set webSphereDefaultIsolationLevel==2 - Unsets default level RS
+# COPY ./updateWCDSAttribute.py /SETUP/bin/updateWCDSAttribute.py
+# RUN echo "/opt/WebSphere/AppServer/profiles/default/bin/wsadmin.sh -conntype NONE -f /SETUP/bin/updateWCDSAttribute.py webSphereDefaultIsolationLevel java.lang.Integer 2" >> /SETUP/bin/custConfiguration.sh
+# update-datasource-attribute  -j <JDBCProvider>
+#                                 -d <Datasource>
+#                                 -n <AttrName>
+#                                 -t <AttrType>
+#                                 -v <AttrValue>							 
+# RUN run update-datasource-attribute -n webSphereDefaultIsolationLevel -t integer -v 2
+
+################
+# New Relic
+# TS_APP_WCS_V9_PERF_CLUSTER_1
+# Specify New Relic Env. Variables in the helm values.yaml
+#COPY ./newrelic.jar /opt/WebSphere/AppServer/profiles/default/servers/server1/newrelic.jar
+#COPY ./newrelic.yml /opt/WebSphere/AppServer/profiles/default/servers/server1/newrelic.yml
+##RUN run add-generic-jvmarg "-javaagent:/opt/WebSphere/AppServer/profiles/default/servers/server1/newrelic.jar"
+
+################
+#Debug SSL
+##RUN run add-generic-jvmarg -Djavax.net.debug=all
+##RUN run set-trace-specification "*=info:SSL=all"
+
+################
+# Debug HCLCache
+# grep for "Redisson Exec Time"
+#RUN run set-trace-specification "com.hcl.commerce.cache.remote.HCLCachePerf=all"
+
+
+################
+# Set Trace with options
+# Run with this syntax (6 arguments)
+# usage: /opt/WebSphere/AppServer/profiles/default/bin/wsadmin.sh -conntype NONE -f change_log.py <log_maxNumberOfBackupFiles> <log_rolloverSize> <err_maxNumberOfBackupFiles> <err_rolloverSize> <trc_maxNumberOfBackupFiles> <trc_rolloverSize>
+#COPY ./change_logs.py /SETUP/bin/change_logs.py
+#RUN run set-trace-specification "com.ibm.commerce.foundation.logging.service.*=FINEST:com.ibm.websphere.commerce.WC_SESSIONMANAGEMENT=all"
+#RUN run set-trace-specification "com.ibm.commerce.foundation.logging.service.*=FINEST:com.ibm.websphere.commerce.WC_SESSIONMANAGEMENT=all"
+#RUN echo "/opt/WebSphere/AppServer/profiles/default/bin/wsadmin.sh -conntype NONE -f /SETUP/bin/change_logs.py 20 100 10 100 20 100" >> /SETUP/bin/custConfiguration.sh
+#RUN chmod u+x /SETUP/bin/custConfiguration.sh
+
+################
+# JSON Logging - Configure in Helm charts
+#COPY ./binary_logging.py /SETUP/bin/binary_logging.py
+#RUN cp /SETUP/bin/entrypoint.sh /SETUP/bin/entrypoint.sh.back
+#RUN cat /SETUP/bin/entrypoint.sh.back | sed 's/while \[ ! -f $traceFile \]; do sleep 0.1; done//' | sed 's/tail -F $traceFile --pid $SERVER_PID -n +0 \&/\/opt\/WebSphere\/AppServer\/bin\/logViewer.sh -monitor 1 -resumable -resume -format json \&/' > /SETUP/bin/entrypoint.sh
+#RUN echo "/profile/bin/wsadmin.sh -conntype None -f /SETUP/bin/binary_logging.py" >> /SETUP/bin/custConfiguration.sh
+#RUN chmod u+x /SETUP/bin/entrypoint.sh
+#RUN chmod u+x /SETUP/bin/custConfiguration.sh
+#RUN mkdir -p /opt/WebSphere/AppServer/profiles/default/logs/server1/logdata
+
+################
+# Install Cache Monitor II
+#
+#COPY ./cache-monitor-install.py /SETUP/scripts/cache-monitor-install.py
+#COPY ./cachemonitor7_update.zip /SETUP/scripts/cachemonitor7_update.zip
+
+#COPY ./cache-monitor-autostart.py /SETUP/scripts/cache-monitor-autostart.py
+#RUN run enable-cache-monitor-auto-start true
+
+
+#################
+# HCL Cache Patches - CM and Maintenance
+#COPY ./hcl-cache-bundle-9.1.6.0-20210219.203245-25.jar /opt/WebSphere/AppServer/plugins/hcl-cache-bundle-1.0.jar
+#RUN /opt/WebSphere/AppServer/profiles/default/bin/osgiCfgInit.sh -all
+
+#COPY hcl-cache-1.0.jar /opt/WebSphere/AppServer/plugins/hcl-cache-bundle-1.0.jar
+#RUN /opt/WebSphere/AppServer/profiles/default/bin/osgiCfgInit.sh -all
+
+#COPY ./Enablement-BaseComponentsData.jar /opt/WebSphere/AppServer/profiles/default/installedApps/localhost/ts.ear/Enablement-BaseComponentsData.jar
+#COPY ./Enablement-BaseComponentsLogic.jar /opt/WebSphere/AppServer/profiles/default/installedApps/localhost/ts.ear/Enablement-BaseComponentsLogic.jar
+#COPY ./Enablement-RelationshipManagementData.jar /opt/WebSphere/AppServer/profiles/default/installedApps/localhost/ts.ear/Enablement-RelationshipManagementData.jar
+#COPY ./Enablement-RelationshipManagementLogic.jar /opt/WebSphere/AppServer/profiles/default/installedApps/localhost/ts.ear/Enablement-RelationshipManagementLogic.jar
+
+#RUN run add-objectcache services/cache/WCUserContractDistributedMapCache 3000 NONE
+#RUN run add-objectcache services/cache/WCUserAddressDistributedMapCache 3000 NONE 
+#RUN run add-objectcache services/cache/WCMemberGroupDistributedMapCache 3000 NONE
+#RUN run add-objectcache services/cache/WCMemberRoleDistributedMapCache 3000 NONE
+	
+################
+# RESET TO Dynacache
+#RUN run set-cache-provider dynacache all
+
+#################
+# Now Enabled in Helm Charts
+# ENV EXPOSE_METRICS true
+
+################
+# Auto-Caching
+# there is an "auto-caching" configuration setting you can use to cache these queries, to help evaluate how much benefit can be obtained from caching the queries. 
+# You can add the following setting in the CrossTransactionCache tag in the InstanceProperties tag in the wc-server.xml file, like this:
+# <InstanceProperties>
+# ...
+# <CrossTransactionCache maxTimeToLiveForAutoCacheEntries="3600" autoCacheableTableNames="BUSCHNDESC BUSCHN COLLATERAL COLLDESC COLLIMGMAPAREA COLLTYPE" />
+# <CrossTransactionCache maxTimeToLiveForAutoCacheEntries="3600" autoCacheableTableNames="COLLATERAL COLLDESC COLLIMGMAPAREA COLLTYPE" />
+# <CrossTransactionCache maxTimeToLiveForAutoCacheEntries="3600" autoCacheableTableNames="BUSCHNDESC BUSCHN " />
+# ...
+# </InstanceProperties>
+ 
+################
+##cache config
+#COPY ./wc-server.new.xml /opt/WebSphere/AppServer/profiles/default/installedApps/localhost/ts.ear/xml/config/wc-server.xml
+#COPY ./cache_cfg.yaml /SETUP/hcl-cache/cache_cfg.yaml
+ 
+#########################################################################
+# REST Cache configuration - Andon
+# updated from Noureddine - Feb.12
+#copy ./cachespec.xml /opt/WebSphere/AppServer/profiles/default/installedApps/localhost/ts.ear/Rest.war/WEB-INF/cachespec.xml
+
+#################
+# HCL Cache Patches - CM and Maintenance
+#COPY ./hcl-cache-bundle-9.1.6.0-20210219.203245-25.jar /opt/WebSphere/AppServer/plugins/hcl-cache-bundle-1.0.jar
+#RUN /opt/WebSphere/AppServer/profiles/default/bin/osgiCfgInit.sh -all
+
+#COPY hcl-cache-1.0.jar /opt/WebSphere/AppServer/plugins/hcl-cache-bundle-1.0.jar
+#RUN /opt/WebSphere/AppServer/profiles/default/bin/osgiCfgInit.sh -all
+
+#COPY ./Enablement-BaseComponentsData.jar /opt/WebSphere/AppServer/profiles/default/installedApps/localhost/ts.ear/Enablement-BaseComponentsData.jar
+#COPY ./Enablement-BaseComponentsLogic.jar /opt/WebSphere/AppServer/profiles/default/installedApps/localhost/ts.ear/Enablement-BaseComponentsLogic.jar
+#COPY ./Enablement-RelationshipManagementData.jar /opt/WebSphere/AppServer/profiles/default/installedApps/localhost/ts.ear/Enablement-RelationshipManagementData.jar
+#COPY ./Enablement-RelationshipManagementLogic.jar /opt/WebSphere/AppServer/profiles/default/installedApps/localhost/ts.ear/Enablement-RelationshipManagementLogic.jar
+
+#RUN run add-objectcache services/cache/WCUserContractDistributedMapCache 3000 NONE
+#RUN run add-objectcache services/cache/WCUserAddressDistributedMapCache 3000 NONE 
+#RUN run add-objectcache services/cache/WCMemberGroupDistributedMapCache 3000 NONE
+#RUN run add-objectcache services/cache/WCMemberRoleDistributedMapCache 3000 NONE
+	
+################
+# Update Cache sizes using scripts directly
+#COPY ./update_cache_sizes.py /SETUP/scripts/update_cache_sizes.py
+#RUN /opt/WebSphere/AppServer/profiles/default/bin/wsadmin.sh -conntype NONE -f /SETUP/scripts/cache-monitor-install.py
+#RUN /opt/WebSphere/AppServer/profiles/default/bin/wsadmin.sh -conntype NONE -f /SETUP/scripts/cache-monitor-autostart.py true
+#Replace with RUN Engine Commands
+#RUN /opt/WebSphere/AppServer/profiles/default/bin/wsadmin.sh -conntype NONE -f /SETUP/scripts/update_cache_sizes.py
+
+# Engine commands wil work for ts-app only. Liberty use cache overides
+#RUN run update-objectcache-size baseCache 20000 400
+#RUN run update-objectcache-size dmap/IVCache 20000 200
+#RUN run update-objectcache-size dmap/PriceCache 20000 200
+#RUN run update-objectcache-size services/cache/DM_Cache 300000 200
+#RUN run update-objectcache-size services/cache/DM_UserCache 10000 200
+#RUN run update-objectcache-size services/cache/WCFlexFlowDistributedMapCache 1000 3
+#RUN run update-objectcache-size dmap/IC_Cache 5000 200
+#RUN run update-objectcache-size services/cache/WCLayoutDistributedMapCache 1000 3
+#RUN run update-objectcache-size services/cache/PT_Cache 1000 200
+#RUN run update-objectcache-size dmap/PR_Cache 5000 200
+#RUN run update-objectcache-size services/cache/WCRESTTagDistributedMapCache 1000 10
+#RUN run update-objectcache-size services/cache/WCSEORedirectRulesDistributedMapCache 1000 10
+#RUN run update-objectcache-size services/cache/WCSEOURLDistributedMapCache 10000 10
+#RUN run update-objectcache-size services/cache/WCSEOURLKeyword2URLTokenDistributedMapCache 5000 40
+#RUN run update-objectcache-size services/cache/WCSEOURLToken2URLKeywordDistributedMapCache 10000 25
+#RUN run update-objectcache-size services/cache/WCSearchAttributeDistributedMapCache 5000 200
+#RUN run update-objectcache-size services/cache/WCSearchDistributedMapCache 5000 200
+#RUN run update-objectcache-size services/cache/WCSearchCatHierarchyDistributedMapCache 2000 200
+#RUN run update-objectcache-size services/cache/WCSearchFacetDistributedMapCache 2000 200
+#RUN run update-objectcache-size services/cache/WCSearchMerchandisingDistributedMapCache 1000 200
+#RUN run update-objectcache-size services/cache/WCSearchNavigationDistributedMapCache 1000 200
+#RUN run update-objectcache-size services/cache/WCSearchSTADistributedMapCache 100000 200
+#RUN run update-objectcache-size services/cache/WCWidgetDefinitionDistributedMapCache 1000 200
+#RUN run update-objectcache-size services/cache/WCSystemDistributedMapCache 2000 200
+#RUN run update-objectcache-size services/cache/WCSessionDistributedMapCache 1000 200
+#RUN run update-objectcache-size services/cache/WCContractDistributedMapCache 1000 200
+#RUN run update-objectcache-size services/cache/WCPromotionDistributedMapCache 3000 200
+#RUN run update-objectcache-size services/cache/WCMarketingDistributedMapCache 3000 200
+#RUN run update-objectcache-size services/cache/WCUserDistributedMapCache 3000 200
+#RUN run update-objectcache-size services/cache/WCCatalogGroupDistributedMapCache 120000 200
+#RUN run update-objectcache-size services/cache/WCCatalogEntryDistributedMapCache 100000 200
+#RUN run update-objectcache-size services/cache/WCPriceDistributedMapCache 100000 200
+#RUN run update-objectcache-size services/cache/WCMiscDistributedMapCache 3000 200
+#RUN run update-objectcache-size services/cache/WCDistributedMapCache 10 200
+#RUN run update-objectcache-size services/cache/WCStoreDistributedMapCache 1000 5
+#RUN run update-objectcache-size services/cache/WCSEOPageDefinitionDistributedMapCache 5000 200
+
+#########################################################################
+
+#us.gcr.io/commerce-product/performance
+
+################
+# 1. Image build
+# docker build -t performance/ts-app:v9.1.1.0 .
+
+# 2. Image Tag
+# docker tag performance/ts-app:v9.1.1.0 us.gcr.io/commerce-product/performance/ts-app:v9.1.1.0
+
+# 3. Image Push
+# docker push us.gcr.io/commerce-product/performance/ts-app:v9.1.1.0
