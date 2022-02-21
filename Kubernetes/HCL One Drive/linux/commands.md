@@ -1,4 +1,14 @@
 
+tar -cvf  heapdump.20201029.062500.240.0010.tar heapdump.20201029.062500.240.0010.phd 
+
+  
+
+ gzip -v heapdump.20201029.062500.240.0010.tar 
+
+bzip2 -v heapdump.20201029.062500.240.0010.tar.gz 
+
+
+
 find / -name health* -print
 
 [root@demoqaauthts-app-889867cfb-tsg4d server1]#  
