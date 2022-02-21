@@ -1,3 +1,6 @@
+
+find / -name health* -print
+
 [root@demoqaauthts-app-889867cfb-tsg4d server1]#  
 
 grep " W " TextLog_20.10.01_00.00.01_server1.log 
