@@ -1,4 +1,13 @@
 
+kubectl exec -it -n redis -c redis redis-master-0 -- redis-cli keys *baseCache*RestServlet* 
+
+ 
+
+kubectl cp redis-master-0:/data/dump.rdb /tmp/dump.rdb -n redis -c redis 
+
+tar: Removing leading `/' from member names 
+
+
 [root@com-kube-master ~]# kc get pods -n default 
 
 NAME                                                      READY   STATUS    RESTARTS   AGE 
