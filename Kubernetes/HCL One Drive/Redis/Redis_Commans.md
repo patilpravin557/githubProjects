@@ -37,4 +37,37 @@ kubectl exec -it -n commerce utility-app -- /opt/WebSphere/CommerceServer90/bin/
 
 ./push_to_live.sh 
 
+
+kubectl exec -it -n redisc redisc-redis-cluster-0 -c redisc-redis-cluster -- redis-cli cluster meet 10.47.128.3 6379          
+
+ 
+
+for i in 0 1 2;do echo "member $i:" && kubectl exec -it -n redisc redisc-redis-cluster-$i -c redisc-redis-cluster -- redis-cli cluster info;done 
+
+for i in 0 1 2;do echo "member $i:" && kubectl exec -it -n redisc redisc-redis-cluster-$i -c redisc-redis-cluster -- redis-cli cluster nodes;done 
+
+ 
+
+ 
+
+for i in 0 1 2;do echo "member $i:" && kubectl exec -it -n redisc redisc-redis-cluster-$i -c redisc-redis-cluster -- redis-cli cluster forget 890a02101076b9ece0dc184843ce869495f9db8e 
+
+ 
+
+kubectl get all -n redisc -owide 
+
+ 
+
+kubectl get all -n redisc 
+
+ 
+
+kubectl get deployments -A 
+
+ 
+
+kubectl exec -it -n redisc redisc-redis-cluster-1 -c redisc-redis-cluster -- bash  
+
+ 
+
  
