@@ -73,3 +73,92 @@ helm install --debug --dry-run firstdryrun ./mychart
 helm install db2exporter-helmchart ./mychart --set dbhostname=demoqaauthdb   
 
 helm install --dry-run --debug --set dbhostname=demoqaauthdb db2exporter ./mychart 
+
+
+
+
+1. google compue cloud bucket 
+
+2. AWS S3 bucket 
+
+3. Github pages 
+
+4. webserver (chartmuseum) 
+
+  
+
+helm repo remove mychartmuseumrepo 
+
+  
+
+[root@comlnx91 chartstorage]# helm ls 
+
+NAME                            NAMESPACE       REVISION        UPDATED                                 STATUS          CHART                   APP VERSION 
+
+db2exporter-helmchart           commerce        1               2020-06-24 05:06:58.8213705 -0400 EDT   deployed        mychart-0.1.1           1.16.0 
+
+demochartmuseum-helmchart       commerce        1               2020-06-25 04:24:28.027121535 -0400 EDT deployed        demochartmuseum-0.1.0   1.16.0 
+
+hcl-commerce-helmchart          commerce        1               2020-05-27 11:26:41.968750354 -0400 EDT deployed        hcl-commerce-2.0.0      >=9.1.0.0 
+
+[root@comlnx91 chartstorage]# helm uninstall demochartmuseum-helmchart 
+
+release "demochartmuseum-helmchart" uninstalled 
+
+  
+
+  
+
+  
+
+chartmuseum --debug --port=8080 --storage="local" --storage-local-rootdir="./chartstorage" >> debug.log 
+
+  
+
+chartmuseum --debug --port=8080 \ 
+
+  --storage="local" \ 
+
+  --storage-local-rootdir="./chartstorage" & 
+
+  
+
+[root@comlnx91 chartmuseum]# lsof -i :8080 
+
+COMMAND     PID USER   FD   TYPE    DEVICE SIZE/OFF NODE NAME 
+
+chartmuse 10997 root    7u  IPv6 354786635      0t0  TCP *:webcache (LISTEN) 
+
+  
+
+helm create <chartname> 
+
+helm package mychart/   ---to create the package 
+
+  
+
+curl --data-binary "@mychart-0.1.0.tgz" http://10.190.67.115:8080/api/charts 
+
+  
+
+lsof -i :8080 
+
+helm plugin list 
+
+  
+
+helm search repo -l mychartmuseumrepo 
+
+helm repo list 
+
+helm ls 
+
+helm search repo mychartmuseumrepo 
+
+helm uninstall mychartmuseum-helmchart 
+
+helm install mydocker-helmchart mychartmuseumrepo/mydockerchart 
+
+ 
+
+helm push mydockerchart/ mychartmuseumrepo 
