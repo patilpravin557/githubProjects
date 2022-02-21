@@ -29,4 +29,36 @@ Extract Jar
 
 jar xvf /opt/WebSphere/AppServer/profiles/default/installedApps/localhost/ts.ear/Foundation-Server.jar 
 
+
+# Duplicate 
+
+Extract (unzip) new jar file with 7zip---from dev 
+
+Open original jar file with 7 zip (do not extract) and drag and drop here the new updated files 
+
+Copy new updated jar file in ts-app folder 
+
+Update the build.batch file with new image tag 
+
+Run the build.batch check the new iamge into nexus 
+
+Scale down the deployment  
+
+Update deplyment with new image tag 
+
+Scale up deployment 
+
+Test 
+
+ 
+
+ 
+
+ 
+
+Jar file location: 
+
+ 
+
+/opt/WebSphere/AppServer/profiles/default/installedApps/localhost/ts.ear/Foundation-Server.jar 
  
