@@ -1,3 +1,7 @@
+## COPY 
+
+kubectl cp commerce/<pod name>:/opt/WebSphere/AppServer/profiles/default/installedApps/localhost/ts.ear/Foundation-Server.jar ./Foundation-Server.jar 
+
 kubectl get nodes 
 
 kubectl get pods 
