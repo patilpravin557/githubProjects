@@ -1,3 +1,26 @@
+
+[root@com-kube-master ~]# kc get pods -n default 
+
+NAME                                                      READY   STATUS    RESTARTS   AGE 
+
+my-nginx-nginx-ingress-controller-68db5bf9dd-6bv8x        1/1     Running   7          25d 
+
+my-nginx-nginx-ingress-default-backend-6957b79cd7-xfq79   1/1     Running   3          26d 
+
+[root@com-kube-master ~]# 
+
+ 
+
+ 
+
+kc logs my-nginx-nginx-ingress-controller-68db5bf9dd-6bv8x --since-time=2020-09-28T09:00:00Z -n default | grep 'timed out' >> nginx_timed_out_29sep20.log 
+
+kc logs my-nginx-nginx-ingress-controller-68db5bf9dd-6bv8x --since-time=2020-09-28T09:00:00Z -n default | grep 'HTTP/1.1" 504' >> nginx_http504_29sep20.log 
+
+kc logs my-nginx-nginx-ingress-controller-68db5bf9dd-6bv8x --since-time=2020-09-28T09:00:00Z -n default | grep 'HTTP/1.1" 503' >> nginx_http503_29sep20.log 
+
+
+
 ## COPY 
 
 kubectl cp commerce/<pod name>:/opt/WebSphere/AppServer/profiles/default/installedApps/localhost/ts.ear/Foundation-Server.jar ./Foundation-Server.jar 
