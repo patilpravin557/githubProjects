@@ -1,0 +1,75 @@
+helm search hub 
+
+helm search hub mysql 
+
+helm search repo stable----search repo 
+
+helm repo add stable---add repo 
+
+helm repo list-----list all available repo 
+
+helm search repo stable/mysql 
+
+helm repo update 
+
+  
+
+helm delete db2exporter-helmchart 
+
+  
+
+  
+
+helm install stable/mysql --generate-name 
+
+helm install myairflow stable/airflow 
+
+*****all chart to be deployed 
+
+helm ls 
+
+**********uninstall all chart 
+
+helm uninstall <chart name> 
+
+********* 
+
+to chek the available configmaps 
+
+kubectl describe configmaps mychart-configmap     
+
+  
+
+helm install helm-demo-configmap ./mychart 
+
+kubectl describe configmaps mychart-configmap 
+
+  
+
+helm uninstall helm-demo-configmap 
+
+**********template derivative 
+
+1. through values file 
+
+2. Built in objects 
+
+   {{ .Release.Name }} 
+
+  
+
+helm get manifest <name> 
+
+  
+
+Run the command in dry run mode 
+
+  
+
+helm install --debug --dry-run firstdryrun ./mychart 
+
+  
+
+helm install db2exporter-helmchart ./mychart --set dbhostname=demoqaauthdb   
+
+helm install --dry-run --debug --set dbhostname=demoqaauthdb db2exporter ./mychart 
