@@ -1,0 +1,95 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    ingress.kubernetes.io/backend-protocol: HTTPS
+    ingress.kubernetes.io/secure-backends: "true"
+    kubernetes.io/ingress.class: gce-internal
+    meta.helm.sh/release-name: demo-qa-live
+    meta.helm.sh/release-namespace: commerce
+    kubernetes.io/ingress.allow-http: "false"
+  finalizers:
+  - networking.gke.io/ingress-finalizer-V2
+  generation: 1
+  labels:
+    app: HCL-Commerce
+    app.kubernetes.io/managed-by: Helm
+    chart: hcl-commerce-2.1.4
+    group: demoqalive
+    heritage: Helm
+    release: demo-qa-live
+  name: demoqalive-ingress-internal
+  namespace: commerce
+spec:
+  rules:
+  - host: www.internal.demoqalive.pravin.perf-gcp-cluster.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: demoqalivestore-web
+            port:
+              number: 6443
+        path: /*
+        pathType: ImplementationSpecific
+      - backend:
+          service:
+            name: demoqalivets-app
+            port:
+              number: 5443
+        path: /wcs/*
+        pathType: ImplementationSpecific
+      - backend:
+          service:
+            name: demoqalivequery-app
+            port:
+              number: 30901
+        path: /search/*
+        pathType: ImplementationSpecific
+      - backend:
+          service:
+            name: demoqalivets-web
+            port:
+              number: 8000
+        path: /lobtools/*
+        pathType: ImplementationSpecific
+      - backend:
+          service:
+            name: demoqalivets-web
+            port:
+              number: 8000
+        path: /rest/*
+        pathType: ImplementationSpecific
+      - backend:
+          service:
+            name: demoqatooling-web
+            port:
+              number: 7443
+        path: /tooling/*
+        pathType: ImplementationSpecific
+  - host: search.demoqalive.pravin.perf-gcp-cluster.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: demoqalivequery-app
+            port:
+              number: 30901
+        path: /*
+        pathType: ImplementationSpecific
+  - host: tsapp.demoqalive.pravin.perf-gcp-cluster.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: demoqalivets-app
+            port:
+              number: 5443
+        path: /*
+        pathType: ImplementationSpecific
+  tls:
+  - hosts:
+    - search.demoqalive.pravin.perf-gcp-cluster.com
+    - tsapp.demoqalive.pravin.perf-gcp-cluster.com
+    - www.internal.demoqalive.pravin.perf-gcp-cluster.com
+    secretName: demoqalive-certificate
