@@ -1,3 +1,92 @@
+[pravinprakash.patil@perf-cluster-6-db2-1 ~]$ gsutil cp -r /mnt/disks/db/dbpath/918_200K/MALL.0.db2inst1.DBPART000.20210913180406.001 gs://hclinstallfiles/Pravin 
+
+Copying file:///mnt/disks/db/dbpath/918_200K/MALL.0.db2inst1.DBPART000.20210913180406.001 [Content-Type=application/octet-stream]... 
+
+==> NOTE: You are uploading one or more large file(s), which would run 
+
+significantly faster if you enable parallel composite uploads. This 
+
+feature can be enabled by editing the 
+
+"parallel_composite_upload_threshold" value in your .boto 
+
+configuration file. However, note that if you do this large files will 
+
+be uploaded as `composite objects 
+
+<https://cloud.google.com/storage/docs/composite-objects>`_,which 
+
+means that any user who downloads such objects will need to have a 
+
+compiled crcmod installed (see "gsutil help crcmod"). This is because 
+
+without a compiled crcmod, computing checksums on composite objects is 
+
+so slow that gsutil disables downloads of composite objects. 
+
+  
+
+\ [1 files][  5.8 GiB/  5.8 GiB]  163.8 MiB/s 
+
+Operation completed over 1 objects/5.8 GiB. 
+
+ 
+
+gcloud compute scp cpt-cluster-db2-small:/tmp/dbpath.zip ./dbpath.zip 
+
+ 
+
+gsutil cp -r /mnt/disks/db/dbpath/180K/MALL.0.db2inst1.DBPART000.20210520152916.001 gs://hclinstallfiles/ 
+
+ 
+
+ 
+
+gsutil ls gs://hclinstallfiles/ 
+
+ 
+
+PS C:\Users\pravinprakash.patil\AppData\Local\Google\Cloud SDK> gsutil cp -r gs://hclinstallfiles/Pravin/db2collect.2021-12-03-07.29.54.tar.gz .                                                             
+
+Copying gs://hclinstallfiles/Pravin/db2collect.2021-12-03-07.29.54.tar.gz... 
+
+- [1 files][291.1 KiB/291.1 KiB] 
+
+Operation completed over 1 objects/291.1 KiB. 
+
+ 
+
+ 
+
+[root@perf-cluster-2-db2 db2report]#  gsutil cp gs://hclinstallfiles/test_gcp.txt /home/db2inst1/db2report/ 
+
+Copying gs://hclinstallfiles/test_gcp.txt... 
+
+/ [1 files][   12.0 B/   12.0 B] 
+
+Operation completed over 1 objects/12.0 B. 
+
+[root@perf-cluster-2-db2 db2report]# gsutil cp /home/db2inst1/db2report/db2collect.2021-07-02-15.26.31.tar.gz gs://hclinstallfiles/Saroj/ 
+
+Copying file:///home/db2inst1/db2report/db2collect.2021-07-02-15.26.31.tar.gz [Content-Type=application/x-tar]... 
+
+AccessDeniedException: 403 Insufficient Permission 
+
+[root@perf-cluster-2-db2 db2report]# 
+
+ 
+
+ 
+
+PS C:\Users\pravinprakash.patil\AppData\Local\Google\Cloud SDK> gsutil cp gs://hclinstallfiles/Saroj/db2collect.2021-07-02-15.26.31.tar.gz .                                                                       Copying gs://hclinstallfiles/Saroj/db2collect.2021-07-02-15.26.31.tar.gz... 
+
+- [1 files][282.3 KiB/282.3 KiB] 
+
+Operation completed over 1 objects/282.3 KiB. 
+
+PS C:\Users\pravinprakash.patil\AppData\Local\Google\Cloud SDK>    
+
+
 gcloud auth login 
 
 gcloud beta compute ssh --zone "asia-south1-c" "perf-cluster-2-db2" --project "commerce-product" 
