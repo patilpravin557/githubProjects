@@ -5,6 +5,9 @@ https://cloud.google.com/sdk/docs/quickstart
 * https://chocolatey.org/
 * choco install kubernetes-helm
 # Install Kubernetes
+
+choco install kubernetes-cli
+ OR
  gcloud components install kubectl
 
 # Setup your laptop by running the following commands
